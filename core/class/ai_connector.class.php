@@ -44,46 +44,55 @@ class ai_connector extends eqLogic {
      * execute : Cœur de l'exécution des commandes
      */
     public function execute($_options = array()) {
-    // On récupère l'ID logique de la commande appelée
-        $cmdLogicalId = $this->getLogicalId(); 
-
-        if ($cmdLogicalId == 'ask') {
-            $prompt = $_options['message'];
-            $engine = $this->getConfiguration('engine');
-            $apiKey = $this->getConfiguration('apiKey');
-            $model  = $this->getConfiguration('model');
-            
-            if (empty($apiKey)) {
-                $msg = "Erreur : Clé API absente pour l'équipement " . $this->getName();
-                log::add('ai_connector', 'error', $msg);
-                return $msg;
-            }
-
-            // Sélection du moteur et exécution
-            switch ($engine) {
-                case 'gemini':
-                    $result = $this->callGemini($prompt, $apiKey, $model);
-                    break;
-                case 'openai':
-                    $result = $this->callOpenAI($prompt, $apiKey, $model);
-                    break;
-                case 'mistral':
-                    $result = $this->callMistral($prompt, $apiKey, $model);
-                    break;
-                default:
-                    $result = "Moteur IA [$engine] non supporté.";
-                    break;
-            }
-
-            // Mise à jour de la commande "Dernière réponse" dans Jeedom
-            log::add('ai_connector', 'debug', 'Réponse brute de l\'IA : ' . $result);
-            $this->checkAndUpdateCmd('reponse', $result);
-            
-
-            return $result;
-        }
+    // On doit récupérer l'ID de la commande qui a été réellement appelée
+    // Si l'appel vient de ai_connectorCmd, l'ID est dans les options ou via une autre méthode
+    // Mais le plus simple dans votre structure est de vérifier quel LogicalId est appelé
+    log::add('ai_connector', 'debug', 'DEBUG EXECUTE - LogicalID de l\'objet : ' . $this->getLogicalId());
+    
+    $cmd = null;
+    if (isset($_options['proxy'])) {
+        $cmd = $_options['proxy'];
     }
 
+    // Si on ne trouve pas l'ID de commande, on ne peut pas savoir quoi faire
+    // On va donc tester le LogicalID de la commande directement
+    if ($this->getLogicalId() == 'ask') {
+        $prompt = $_options['message'];
+        $eqLogic = $this->getEqLogic(); // On récupère l'équipement parent
+        
+        $engine = $eqLogic->getConfiguration('engine');
+        $apiKey = $eqLogic->getConfiguration('apiKey');
+        $model  = $eqLogic->getConfiguration('model');
+        
+        log::add('ai_connector', 'debug', 'Tentative d\'envoi vers ' . $engine . ' avec le prompt : ' . $prompt);
+
+        if (empty($apiKey)) {
+            $msg = "Erreur : Clé API absente pour l'équipement " . $eqLogic->getName();
+            log::add('ai_connector', 'error', $msg);
+            return $msg;
+        }
+
+        switch ($engine) {
+            case 'gemini':
+                $result = $this->getEqLogic()->callGemini($prompt, $apiKey, $model);
+                break;
+            case 'openai':
+                $result = $this->getEqLogic()->callOpenAI($prompt, $apiKey, $model);
+                break;
+            case 'mistral':
+                $result = $this->getEqLogic()->callMistral($prompt, $apiKey, $model);
+                break;
+            default:
+                $result = "Moteur IA [$engine] non supporté.";
+                break;
+        }
+
+        log::add('ai_connector', 'debug', 'Réponse reçue : ' . $result);
+        $eqLogic->checkAndUpdateCmd('reponse', $result);
+        
+        return $result;
+    }
+}
     /**
      * GOOGLE GEMINI
      */
@@ -182,6 +191,13 @@ class ai_connector extends eqLogic {
  */
 class ai_connectorCmd extends cmd {
     public function execute($_options = array()) {
-        return $this->getEqLogic()->execute($_options);
+        // On passe la commande elle-même dans les options pour que eqLogic sache qui l'appelle
+        $_options['proxy'] = $this; 
+        
+        // On vérifie si c'est bien la commande 'ask'
+        if ($this->getLogicalId() == 'ask') {
+             // On execute la logique ici ou on redirige vers l'eqLogic proprement
+             return $this->getEqLogic()->execute($_options);
+        }
     }
 }
