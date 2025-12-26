@@ -170,7 +170,9 @@ class ai_connector extends eqLogic {
         $jsonResponse = json_decode($rawResponse, true);
 
         if ($httpCode !== 200) {
-            log::add('ai_connector', 'error', "Erreur API $url (Code $httpCode) : " . $rawResponse);
+            // On remplace la clé API par des étoiles dans l'URL pour le log
+            $safeUrl = preg_replace('/key=([^&]+)/', 'key=*********', $url);
+            log::add('ai_connector', 'error', "Erreur API $safeUrl (Code $httpCode) : " . $rawResponse);
         }
 
         return $jsonResponse;
