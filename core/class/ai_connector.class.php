@@ -88,7 +88,7 @@ class ai_connector extends eqLogic {
      */
     private function callGemini($prompt, $apiKey, $model) {
         if (empty($prompt)) return "Le message est vide.";
-        $modelId = (empty($model)) ? 'gemini-1.5-flash' : $model;
+        $modelId = (empty($model)) ? 'gemini-1.5-flash' : str_replace(' ', '-', trim($model));
         $url = "https://generativelanguage.googleapis.com/v1beta/models/" . $modelId . ":generateContent?key=" . $apiKey;
         
         $data = [
