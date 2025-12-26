@@ -113,43 +113,57 @@ class ai_connector extends eqLogic {
      * OPENAI (ChatGPT)
      */
     private function callOpenAI($prompt, $apiKey, $model) {
-        $modelId = (empty($model)) ? 'gpt-4o-mini' : $model;
-        $url = "https://api.openai.com/v1/chat/completions";
-        
-        $data = [
-            "model" => $modelId,
-            "messages" => [["role" => "user", "content" => $prompt]]
-        ];
-        
-        $headers = [
-            'Content-Type: application/json',
-            'Authorization: Bearer ' . $apiKey
-        ];
+    $modelId = (empty($model)) ? 'gpt-4o-mini' : $model;
+    $url = "https://api.openai.com/v1/chat/completions";
+    
+    $data = [
+        "model" => $modelId,
+        "messages" => [
+            ["role" => "system", "content" => "Tu es un assistant utile intégré à la domotique Jeedom."],
+            ["role" => "user", "content" => $prompt]
+        ],
+        "temperature" => 0.7
+    ];
+    
+    $headers = [
+        'Content-Type: application/json',
+        'Authorization: Bearer ' . $apiKey
+    ];
 
-        $response = $this->sendCurl($url, $data, $headers);
-        return $response['choices'][0]['message']['content'] ?? "Erreur OpenAI : " . ($response['error']['message'] ?? json_encode($response));
+    $response = $this->sendCurl($url, $data, $headers);
+    
+    if (isset($response['choices'][0]['message']['content'])) {
+        return $response['choices'][0]['message']['content'];
     }
+    
+    return "Erreur OpenAI : " . ($response['error']['message'] ?? json_encode($response));
+}
 
     /**
      * MISTRAL AI
      */
     private function callMistral($prompt, $apiKey, $model) {
-        $modelId = (empty($model)) ? 'mistral-tiny' : $model;
-        $url = "https://api.mistral.ai/v1/chat/completions";
-        
-        $data = [
-            "model" => $modelId,
-            "messages" => [["role" => "user", "content" => $prompt]]
-        ];
-        
-        $headers = [
-            'Content-Type: application/json',
-            'Authorization: Bearer ' . $apiKey
-        ];
+    $modelId = (empty($model)) ? 'mistral-small-latest' : $model;
+    $url = "https://api.mistral.ai/v1/chat/completions";
+    
+    $data = [
+        "model" => $modelId,
+        "messages" => [["role" => "user", "content" => $prompt]]
+    ];
+    
+    $headers = [
+        'Content-Type: application/json',
+        'Authorization: Bearer ' . $apiKey
+    ];
 
-        $response = $this->sendCurl($url, $data, $headers);
-        return $response['choices'][0]['message']['content'] ?? "Erreur Mistral : " . ($response['error']['message'] ?? json_encode($response));
+    $response = $this->sendCurl($url, $data, $headers);
+    
+    if (isset($response['choices'][0]['message']['content'])) {
+        return $response['choices'][0]['message']['content'];
     }
+    
+    return "Erreur Mistral : " . ($response['error']['message'] ?? json_encode($response));
+}
 
     /**
      * Utilitaire CURL générique
