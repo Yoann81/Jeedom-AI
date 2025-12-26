@@ -1,6 +1,6 @@
 {
   "id": "ai_connector",
-  "name": "AI Multi-Connect",
+  "name": "Jeedom-AI",
   "description": "Connecteur universel pour IA (Gemini, OpenAI, Mistral...)",
   "licence": "AGPL",
   "author": "MJoulia",
