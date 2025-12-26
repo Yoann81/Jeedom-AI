@@ -43,52 +43,42 @@ class ai_connector extends eqLogic {
     /**
      * execute : Cœur de l'exécution des commandes
      */
-    public function execute($_options = array()) {
-    // On doit récupérer l'ID de la commande qui a été réellement appelée
-    // Si l'appel vient de ai_connectorCmd, l'ID est dans les options ou via une autre méthode
-    // Mais le plus simple dans votre structure est de vérifier quel LogicalId est appelé
-    log::add('ai_connector', 'debug', 'DEBUG EXECUTE - LogicalID de l\'objet : ' . $this->getLogicalId());
-    
-    $cmd = null;
-    if (isset($_options['proxy'])) {
-        $cmd = $_options['proxy'];
-    }
+    public function execute($_logicalId, $_options = array()) {
+    log::add('ai_connector', 'debug', 'DEBUG EXECUTE - Commande reçue : ' . $_logicalId);
 
-    // Si on ne trouve pas l'ID de commande, on ne peut pas savoir quoi faire
-    // On va donc tester le LogicalID de la commande directement
-    if ($this->getLogicalId() == 'ask') {
+    if ($_logicalId == 'ask') {
         $prompt = $_options['message'];
-        $eqLogic = $this->getEqLogic(); // On récupère l'équipement parent
+        $engine = $this->getConfiguration('engine');
+        $apiKey = $this->getConfiguration('apiKey');
+        $model  = $this->getConfiguration('model');
         
-        $engine = $eqLogic->getConfiguration('engine');
-        $apiKey = $eqLogic->getConfiguration('apiKey');
-        $model  = $eqLogic->getConfiguration('model');
-        
-        log::add('ai_connector', 'debug', 'Tentative d\'envoi vers ' . $engine . ' avec le prompt : ' . $prompt);
+        log::add('ai_connector', 'debug', 'Moteur : ' . $engine . ' | Modèle : ' . $model);
 
         if (empty($apiKey)) {
-            $msg = "Erreur : Clé API absente pour l'équipement " . $eqLogic->getName();
+            $msg = "Erreur : Clé API absente";
             log::add('ai_connector', 'error', $msg);
             return $msg;
         }
 
         switch ($engine) {
             case 'gemini':
-                $result = $this->getEqLogic()->callGemini($prompt, $apiKey, $model);
+                $result = $this->callGemini($prompt, $apiKey, $model);
                 break;
             case 'openai':
-                $result = $this->getEqLogic()->callOpenAI($prompt, $apiKey, $model);
+                $result = $this->callOpenAI($prompt, $apiKey, $model);
                 break;
             case 'mistral':
-                $result = $this->getEqLogic()->callMistral($prompt, $apiKey, $model);
+                $result = $this->callMistral($prompt, $apiKey, $model);
                 break;
             default:
                 $result = "Moteur IA [$engine] non supporté.";
                 break;
         }
 
-        log::add('ai_connector', 'debug', 'Réponse reçue : ' . $result);
-        $eqLogic->checkAndUpdateCmd('reponse', $result);
+        log::add('ai_connector', 'debug', 'Réponse finale : ' . $result);
+        
+        // Mise à jour de la commande "reponse"
+        $this->checkAndUpdateCmd('reponse', $result);
         
         return $result;
     }
@@ -97,6 +87,7 @@ class ai_connector extends eqLogic {
      * GOOGLE GEMINI
      */
     private function callGemini($prompt, $apiKey, $model) {
+        if (empty($prompt)) return "Le message est vide.";
         $modelId = (empty($model)) ? 'gemini-1.5-flash' : $model;
         $url = "https://generativelanguage.googleapis.com/v1beta/models/" . $modelId . ":generateContent?key=" . $apiKey;
         
@@ -191,13 +182,13 @@ class ai_connector extends eqLogic {
  */
 class ai_connectorCmd extends cmd {
     public function execute($_options = array()) {
-        // On passe la commande elle-même dans les options pour que eqLogic sache qui l'appelle
-        $_options['proxy'] = $this; 
-        
-        // On vérifie si c'est bien la commande 'ask'
-        if ($this->getLogicalId() == 'ask') {
-             // On execute la logique ici ou on redirige vers l'eqLogic proprement
-             return $this->getEqLogic()->execute($_options);
+        // On récupère l'équipement lié à cette commande
+        $eqLogic = $this->getEqLogic();
+        if (!is_object($eqLogic)) {
+            throw new Exception(__('Commande non liée à un équipement', __FILE__));
         }
+        
+        // On appelle la fonction de l'équipement en lui passant l'ID de la commande
+        return $eqLogic->execute($this->getLogicalId(), $_options);
     }
 }
