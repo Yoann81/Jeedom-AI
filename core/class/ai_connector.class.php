@@ -76,8 +76,10 @@ class ai_connector extends eqLogic {
             }
 
             // Mise à jour de la commande "Dernière réponse" dans Jeedom
+            log::add('ai_connector', 'debug', 'Réponse brute de l\'IA : ' . $result);
             $this->checkAndUpdateCmd('reponse', $result);
             
+
             return $result;
         }
     }
