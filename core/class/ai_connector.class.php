@@ -98,7 +98,15 @@ class ai_connector extends eqLogic {
         ];
         
         $response = $this->sendCurl($url, $data);
-        return $response['candidates'][0]['content']['parts'][0]['text'] ?? "Erreur Gemini : " . ($response['error']['message'] ?? json_encode($response));
+        
+        // Debug pour voir la structure reçue dans le log ai_connector_debug
+        if (isset($response['candidates'][0]['content']['parts'][0]['text'])) {
+            return $response['candidates'][0]['content']['parts'][0]['text'];
+        } elseif (isset($response['error'])) {
+            return "Erreur API : " . $response['error']['message'];
+        }
+        
+        return "Erreur : Structure de réponse inconnue. Vérifiez vos logs.";
     }
 
     /**
