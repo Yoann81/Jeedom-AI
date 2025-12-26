@@ -44,7 +44,10 @@ class ai_connector extends eqLogic {
      * execute : Cœur de l'exécution des commandes
      */
     public function execute($_options = array()) {
-        if ($this->getLogicalId() == 'ask') {
+    // On récupère l'ID logique de la commande appelée
+        $cmdLogicalId = $this->getLogicalId(); 
+
+        if ($cmdLogicalId == 'ask') {
             $prompt = $_options['message'];
             $engine = $this->getConfiguration('engine');
             $apiKey = $this->getConfiguration('apiKey');
