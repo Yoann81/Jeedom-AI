@@ -20,6 +20,23 @@ $eqLogics = eqLogic::byType('ai_connector');
             <span>{{Configuration}}</span>
         </div>
 
+        <legend><i class="fas fa-terminal"></i> {{Démon}}</legend>
+        <div class="form-horizontal" style="padding: 10px;">
+            <div class="form-group">
+                <label class="col-sm-2 control-label">{{État du démon}}</label>
+                <div class="col-sm-2">
+                    <center>
+                        <span id="sun_deamon_state"></span>
+                    </center>
+                </div>
+                <label class="col-sm-2 control-label">{{Gestion}}</label>
+                <div class="col-sm-4">
+                    <a class="btn btn-success btn-sm deamonLaunch"><i class="fas fa-play"></i> {{Lancer}}</a>
+                    <a class="btn btn-danger btn-sm deamonStop"><i class="fas fa-stop"></i> {{Arrêter}}</a>
+                </div>
+            </div>
+        </div>
+
         <legend><i class="fas fa-microphone"></i> {{Configuration Vocale Globale}}</legend>
         <div class="form-horizontal" style="padding: 10px;">
             <div class="form-group">
@@ -32,7 +49,7 @@ $eqLogics = eqLogic::byType('ai_connector');
                     <div class="input-group">
                         <input type="text" class="configKey form-control" data-l1key="voice_cmd_id" />
                         <span class="input-group-btn">
-                            <a class="btn btn-default listEquipementAction" data-transition="ai_connector"><i class="fas fa-list-alt"></i></a>
+                            <a class="btn btn-default bt_selectCmdExpression"><i class="fas fa-list-alt"></i></a>
                         </span>
                     </div>
                 </div>
@@ -135,7 +152,11 @@ $eqLogics = eqLogic::byType('ai_connector');
                 <table id="table_cmd" class="table table-bordered table-condensed">
                     <thead>
                         <tr>
-                            <th>{{Nom}}</th><th>{{Options}}</th><th>{{Action}}</th>
+                            <th style="width: 50px;">#</th>
+                            <th style="width: 250px;">{{Nom}}</th>
+                            <th style="width: 150px;">{{Type}}</th>
+                            <th style="width: 150px;">{{Options}}</th>
+                            <th style="width: 100px;">{{Action}}</th>
                         </tr>
                     </thead>
                     <tbody>
