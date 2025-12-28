@@ -9,7 +9,9 @@
   "hasDependency": true,
   "hasDaemon": true,
   "max_count_daemon": 1,
-  "changelog": "",
-  "documentation": "",
-  "hasControl": false
+  "parameters": {
+    "voice_enable": 0,
+    "voice_cmd_id": "",
+    "voice_device_id": "1"
+  }
 }
