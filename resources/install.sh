@@ -32,4 +32,23 @@ echo "Téléchargement du modèle de langue 'base'..."
 bash ./models/download-ggml-model.sh base
 if [ $? -ne 0 ]; then echo "Erreur lors du téléchargement du modèle"; exit 1; fi
 
+#########################
+# 5. GESTION DES DROITS (AJOUTÉ)
+#########################
+echo "Configuration des droits pour Jeedom..."
+
+# Remonter au dossier racine du plugin (ai_connector)
+PLUGIN_DIR="/var/www/html/plugins/ai_connector"
+
+# Donner la propriété à www-data (utilisateur web de Jeedom)
+sudo chown -R www-data:www-data $PLUGIN_DIR
+
+# S'assurer que les scripts sont exécutables
+sudo chmod -R 775 $PLUGIN_DIR
+sudo chmod +x $PLUGIN_DIR/resources/demond/ai_connector_daemon.py
+
+# Créer le fichier de log pour éviter le "log: nok"
+sudo touch /var/www/html/log/ai_connector_daemon.log
+sudo chmod 777 /var/www/html/log/ai_connector_daemon.log
+
 echo "Installation terminée avec succès !"
