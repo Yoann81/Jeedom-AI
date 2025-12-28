@@ -1,11 +1,6 @@
 {
   "id": "ai_connector",
   "name": "Jeedom-AI",
-  "description": "Connecteur universel pour IA (Gemini, OpenAI, Mistral...)",
-  "licence": "AGPL",
-  "author": "MJoulia",
-  "require": "4.0",
-  "category": "communication",
   "hasDependency": true,
   "hasDaemon": true,
   "max_count_daemon": 1,
