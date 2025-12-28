@@ -1,23 +1,19 @@
 {
-  "pre-install": {
-  },
   "apt": {
+    "git": "",
+    "build-essential": "",
+    "libasound2-dev": "",
+    "alsa-utils": "",
+    "python3-pip": "",
+    "python3-dev": "",
+    "cmake": ""
   },
   "pip3": {
-    "pyserial" : {"reinstall" : true},
-    "requests" : {"reinstall" : true}
-  },
-  "npm": {
-    "plugins/template/ressources/demond"  : {}
-  },
-  "composer": {
-       "plugins/template"  : {}
-  },
-  "yarn": {
-    "plugins/template/ressources/demond"  : {}
-  },
-  "plugin": {
+    "requests": {"reinstall": true},
+    "numpy": {},
+    "pyserial": {"reinstall": true}
   },
   "post-install": {
+    "script": "plugins/ai_connector/resources/install.sh"
   }
 }

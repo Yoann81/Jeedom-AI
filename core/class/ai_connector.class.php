@@ -8,8 +8,20 @@ require_once dirname(__FILE__) . '/../../../../core/php/core.inc.php';
 class ai_connector extends eqLogic {
 
     /**
-     * postSave : Appelé lors de la sauvegarde de l'équipement
-     * Crée automatiquement les commandes Question et Réponse
+     * post_save : S'exécute lors de la sauvegarde de la CONFIGURATION DU PLUGIN
+     */
+    public static function post_save() {
+        $enable = config::byKey('voice_enable', 'ai_connector', 0);
+        if ($enable == 1) {
+            log::add('ai_connector', 'info', 'Redémarrage du démon suite à modification de configuration');
+            self::deamon_start();
+        } else {
+            self::deamon_stop();
+        }
+    }
+
+    /**
+     * postSave : Appelé lors de la sauvegarde de l'ÉQUIPEMENT (Robot Gemini, etc.)
      */
     public function postSave() {
         // Commande Action : Poser une question
@@ -41,155 +53,117 @@ class ai_connector extends eqLogic {
     }
 
     /**
-     * execute : Cœur de l'exécution des commandes
+     * GESTION DU DÉMON
+     */
+    public static function deamon_start() {
+        self::deamon_stop();
+        $apikey = config::byKey('api', 'core');
+        $cmdId = config::byKey('voice_cmd_id', 'ai_connector');
+        
+        if ($cmdId == '') {
+            log::add('ai_connector', 'error', 'Le démon ne peut pas démarrer : ID de destination non configuré.');
+            return;
+        }
+
+        $deviceId = config::byKey('voice_device_id', 'ai_connector', '1');
+        $path = realpath(dirname(__FILE__) . '/../../resources/demond/ai_connector_daemon.py');
+        $log = log::getPathName('ai_connector_daemon');
+        
+        // Lancement en tâche de fond
+        $cmd = "python3 $path $apikey $cmdId $deviceId >> $log 2>&1 &";
+        exec($cmd);
+    }
+
+    public static function deamon_stop() {
+        exec("ps aux | grep ai_connector_daemon.py | grep -v grep | awk '{print $2}' | xargs kill -9 > /dev/null 2>&1");
+    }
+
+    /**
+     * EXÉCUTION DES COMMANDES
      */
     public function execute($_logicalId, $_options = array()) {
-    log::add('ai_connector', 'debug', 'DEBUG EXECUTE - Commande reçue : ' . $_logicalId);
+        if ($_logicalId == 'ask') {
+            $prompt = $_options['message'];
+            $engine = $this->getConfiguration('engine');
+            $apiKey = $this->getConfiguration('apiKey');
+            $model  = $this->getConfiguration('model');
 
-    if ($_logicalId == 'ask') {
-        $prompt = $_options['message'];
-        $engine = $this->getConfiguration('engine');
-        $apiKey = $this->getConfiguration('apiKey');
-        $model  = $this->getConfiguration('model');
-        
-        log::add('ai_connector', 'debug', 'Moteur : ' . $engine . ' | Modèle : ' . $model);
+            if (empty($apiKey)) {
+                $err = "Erreur : Clé API absente pour $engine";
+                log::add('ai_connector', 'error', $err);
+                return $err;
+            }
 
-        if (empty($apiKey)) {
-            $msg = "Erreur : Clé API absente";
-            log::add('ai_connector', 'error', $msg);
-            return $msg;
+            switch ($engine) {
+                case 'gemini':
+                    $result = $this->callGemini($prompt, $apiKey, $model);
+                    break;
+                case 'openai':
+                    $result = $this->callOpenAI($prompt, $apiKey, $model);
+                    break;
+                case 'mistral':
+                    $result = $this->callMistral($prompt, $apiKey, $model);
+                    break;
+                default:
+                    $result = "Moteur IA [$engine] non supporté.";
+                    break;
+            }
+
+            $this->checkAndUpdateCmd('reponse', $result);
+            return $result;
         }
-
-        switch ($engine) {
-            case 'gemini':
-                $result = $this->callGemini($prompt, $apiKey, $model);
-                break;
-            case 'openai':
-                $result = $this->callOpenAI($prompt, $apiKey, $model);
-                break;
-            case 'mistral':
-                $result = $this->callMistral($prompt, $apiKey, $model);
-                break;
-            default:
-                $result = "Moteur IA [$engine] non supporté.";
-                break;
-        }
-
-        log::add('ai_connector', 'debug', 'Réponse finale : ' . $result);
-        
-        // Mise à jour de la commande "reponse"
-        $this->checkAndUpdateCmd('reponse', $result);
-        
-        return $result;
     }
-}
+
     /**
-     * GOOGLE GEMINI
+     * MOTEURS IA (APPELS API)
      */
     private function callGemini($prompt, $apiKey, $model) {
         if (empty($prompt)) return "Le message est vide.";
         $modelId = (empty($model)) ? 'gemini-1.5-flash' : str_replace(' ', '-', trim($model));
         $url = "https://generativelanguage.googleapis.com/v1beta/models/" . $modelId . ":generateContent?key=" . $apiKey;
-        
-        $data = [
-            "contents" => [
-                ["parts" => [["text" => $prompt]]]
-            ]
-        ];
-        
+        $data = ["contents" => [["parts" => [["text" => $prompt]]]]];
         $response = $this->sendCurl($url, $data);
         
-        // Debug pour voir la structure reçue dans le log ai_connector_debug
         if (isset($response['candidates'][0]['content']['parts'][0]['text'])) {
             return $response['candidates'][0]['content']['parts'][0]['text'];
-        } elseif (isset($response['error'])) {
-            return "Erreur API : " . $response['error']['message'];
         }
-        
-        return "Erreur : Structure de réponse inconnue. Vérifiez vos logs.";
+        return "Erreur Gemini : " . ($response['error']['message'] ?? "Structure inconnue");
     }
 
-    /**
-     * OPENAI (ChatGPT)
-     */
     private function callOpenAI($prompt, $apiKey, $model) {
-    $modelId = (empty($model)) ? 'gpt-4o-mini' : $model;
-    $url = "https://api.openai.com/v1/chat/completions";
-    
-    $data = [
-        "model" => $modelId,
-        "messages" => [
-            ["role" => "system", "content" => "Tu es un assistant utile intégré à la domotique Jeedom."],
-            ["role" => "user", "content" => $prompt]
-        ],
-        "temperature" => 0.7
-    ];
-    
-    $headers = [
-        'Content-Type: application/json',
-        'Authorization: Bearer ' . $apiKey
-    ];
-
-    $response = $this->sendCurl($url, $data, $headers);
-    
-    if (isset($response['choices'][0]['message']['content'])) {
-        return $response['choices'][0]['message']['content'];
+        $modelId = (empty($model)) ? 'gpt-4o-mini' : $model;
+        $url = "https://api.openai.com/v1/chat/completions";
+        $data = [
+            "model" => $modelId,
+            "messages" => [
+                ["role" => "system", "content" => "Assistant domotique Jeedom."],
+                ["role" => "user", "content" => $prompt]
+            ]
+        ];
+        $headers = ['Content-Type: application/json', 'Authorization: Bearer ' . $apiKey];
+        $response = $this->sendCurl($url, $data, $headers);
+        return $response['choices'][0]['message']['content'] ?? "Erreur OpenAI";
     }
-    
-    return "Erreur OpenAI : " . ($response['error']['message'] ?? json_encode($response));
-}
 
-    /**
-     * MISTRAL AI
-     */
     private function callMistral($prompt, $apiKey, $model) {
-    $modelId = (empty($model)) ? 'mistral-small-latest' : $model;
-    $url = "https://api.mistral.ai/v1/chat/completions";
-    
-    $data = [
-        "model" => $modelId,
-        "messages" => [["role" => "user", "content" => $prompt]]
-    ];
-    
-    $headers = [
-        'Content-Type: application/json',
-        'Authorization: Bearer ' . $apiKey
-    ];
-
-    $response = $this->sendCurl($url, $data, $headers);
-    
-    if (isset($response['choices'][0]['message']['content'])) {
-        return $response['choices'][0]['message']['content'];
+        $modelId = (empty($model)) ? 'mistral-small-latest' : $model;
+        $url = "https://api.mistral.ai/v1/chat/completions";
+        $data = ["model" => $modelId, "messages" => [["role" => "user", "content" => $prompt]]];
+        $headers = ['Content-Type: application/json', 'Authorization: Bearer ' . $apiKey];
+        $response = $this->sendCurl($url, $data, $headers);
+        return $response['choices'][0]['message']['content'] ?? "Erreur Mistral";
     }
-    
-    return "Erreur Mistral : " . ($response['error']['message'] ?? json_encode($response));
-}
 
-    /**
-     * Utilitaire CURL générique
-     */
     private function sendCurl($url, $data, $headers = ['Content-Type: application/json']) {
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 30); // Évite de bloquer Jeedom si l'IA est lente
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true); // Sécurité SSL
-        
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
         $rawResponse = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
-
-        $jsonResponse = json_decode($rawResponse, true);
-
-        if ($httpCode !== 200) {
-            // On remplace la clé API par des étoiles dans l'URL pour le log
-            $safeUrl = preg_replace('/key=([^&]+)/', 'key=*********', $url);
-            log::add('ai_connector', 'error', "Erreur API $safeUrl (Code $httpCode) : " . $rawResponse);
-        }
-
-        return $jsonResponse;
+        return json_decode($rawResponse, true);
     }
 }
 
@@ -198,13 +172,10 @@ class ai_connector extends eqLogic {
  */
 class ai_connectorCmd extends cmd {
     public function execute($_options = array()) {
-        // On récupère l'équipement lié à cette commande
         $eqLogic = $this->getEqLogic();
         if (!is_object($eqLogic)) {
             throw new Exception(__('Commande non liée à un équipement', __FILE__));
         }
-        
-        // On appelle la fonction de l'équipement en lui passant l'ID de la commande
         return $eqLogic->execute($this->getLogicalId(), $_options);
     }
 }

@@ -19,6 +19,30 @@ $eqLogics = eqLogic::byType('ai_connector');
             <br>
             <span>{{Configuration}}</span>
         </div>
+
+        <legend><i class="fas fa-microphone"></i> {{Configuration Vocale Globale}}</legend>
+        <div class="form-horizontal" style="padding: 10px;">
+            <div class="form-group">
+                <label class="col-sm-2 control-label">{{Activer la voix}}</label>
+                <div class="col-sm-1">
+                    <input type="checkbox" class="configKey" data-l1key="voice_enable" />
+                </div>
+                <label class="col-sm-2 control-label">{{Commande destination}}</label>
+                <div class="col-sm-3">
+                    <div class="input-group">
+                        <input type="text" class="configKey form-control" data-l1key="voice_cmd_id" />
+                        <span class="input-group-btn">
+                            <a class="btn btn-default listEquipementAction" data-transition="ai_connector"><i class="fas fa-list-alt"></i></a>
+                        </span>
+                    </div>
+                </div>
+                <label class="col-sm-1 control-label">{{Micro}}</label>
+                <div class="col-sm-1">
+                    <input type="text" class="configKey form-control" data-l1key="voice_device_id" placeholder="1"/>
+                </div>
+            </div>
+        </div>
+
         <legend><i class="fas fa-robot"></i> {{Mes IA}}</legend>
         <div class="eqLogicThumbnailContainer">
             <?php
