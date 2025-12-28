@@ -6,25 +6,33 @@
 class ai_connector extends eqLogic {
 
     public static function deamon_info() {
-        $daemon_info = jeedom::getDaemonInfo('ai_connector');
-        return array('log' => 'ai_connector_daemon', 'launchable' => 'ok', 'state' => $daemon_info['state'], 'auto' => 0);
+        $return = jeedom::getDaemonInfo('ai_connector');
+        $return['log'] = 'ai_connector_daemon';
+        return $return;
     }
 
     public static function deamon_start() {
         log::add('ai_connector', 'info', 'Lancement du démon AI Connector');
         self::deamon_stop();
         
-        $apikey = config::byKey('api', 'core');
-        $cmdId = config::byKey('voice_cmd_id', 'ai_connector');
+        // Find an enabled equipment to source the configuration
+        $eqLogics = eqLogic::byType('ai_connector', true);
+        if (empty($eqLogics)) {
+            log::add('ai_connector', 'error', "Aucun équipement 'AI Connector' activé n'a été trouvé. Le démon ne peut pas démarrer sans configuration.");
+            return;
+        }
+        $config_source = $eqLogics[0]; // Use the first enabled one
+
+        $apikey = config::byKey('api', 'core'); // This is the Jeedom Core API key, needed for callbacks. This is correct.
+        $cmdId = $config_source->getConfiguration('voice_cmd_id');
+        $deviceId = $config_source->getConfiguration('voice_device_id', '1');
         
         if ($cmdId == '') {
-            log::add('ai_connector', 'error', 'Échec : ID de destination non configuré.');
+            log::add('ai_connector', 'error', 'Échec : ID de commande de retour (HP) non configuré sur l\'équipement ' . $config_source->getHumanName(true));
             return;
         }
 
-        $deviceId = config::byKey('voice_device_id', 'ai_connector', '1');
         $path = realpath(dirname(__FILE__) . '/../../resources/demond/ai_connector_daemon.py');
-        
         if (!file_exists($path)) {
             log::add('ai_connector', 'error', 'Échec : Script Python introuvable à ' . $path);
             return;
