@@ -6,7 +6,9 @@
 class ai_connector extends eqLogic {
 
     public static function deamon_info() {
-        return array('log' => 'THIS_IS_A_TEST', 'launchable' => 'ok', 'state' => 'nok', 'auto' => 0);
+        $return = jeedom::getDaemonInfo('ai_connector');
+        $return['log'] = 'ai_connector_daemon';
+        return $return;
     }
 
     public static function deamon_start() {
