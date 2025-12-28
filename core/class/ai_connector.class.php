@@ -2,7 +2,7 @@
 /* Copyright (c) 2025 Votre Nom
  * Plugin AI Multi-Connect pour Jeedom
  */
-
+log::add('ai_connector', 'error', 'Fichier classe CHARGÉ');
 require_once dirname(__FILE__) . '/../../../../core/php/core.inc.php';
 
 class ai_connector extends eqLogic {
