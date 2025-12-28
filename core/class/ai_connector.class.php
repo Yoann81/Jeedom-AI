@@ -57,13 +57,10 @@ class ai_connector extends eqLogic {
      */
     public static function deamon_info() {
         $return = array();
-        $return['log'] = 'ai_connector'; // Utilise le log principal pour tester
+        $return['log'] = 'ai_connector';
         $return['launchable'] = 'ok';
-        
-        // On simplifie le check du state pour le test
-        $state = exec("pgrep -f ai_connector_daemon.py");
-        $return['state'] = ($state != "") ? 'ok' : 'nok';
-        
+        $return['state'] = 'nok'; // Force à nok pour tester l'affichage
+        $return['auto'] = 0;
         return $return;
     }
 
