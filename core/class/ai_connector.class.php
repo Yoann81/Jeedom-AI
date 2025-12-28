@@ -57,23 +57,28 @@ class ai_connector extends eqLogic {
      */
     public static function deamon_info() {
         $return = array();
-        $return['log'] = 'ai_connector_daemon'; // Nom du log sans .log
+        $return['log'] = 'ai_connector_daemon'; // Nom du log pour le bouton "Logs"
+        $return['state'] = 'nok';
         
-        // Vérification des prérequis pour l'affichage
+        // Vérification simplifiée du processus (en attendant d'implémenter le fichier .pid)
+        $state = exec("pgrep -f ai_connector_daemon.py");
+        if ($state != "") {
+            $return['state'] = 'ok';
+        }
+
+        $return['launchable'] = 'ok';
+        
+        // On vérifie UNIQUEMENT ce qui est vital pour le lancement
         $cmdId = config::byKey('voice_cmd_id', 'ai_connector');
+        
         if ($cmdId == '') {
             $return['launchable'] = 'nok';
-            $return['launchable_message'] = "{{ID de destination non configuré}}";
-        } else {
-            $return['launchable'] = 'ok';
+            // Le message s'affichera dans le bloc s'il manque l'ID
+            $return['launchable_message'] = __('L\'ID de commande de destination n\'est pas configuré', __FILE__);
         }
         
-        // État du process
-        $state = exec("pgrep -f ai_connector_daemon.py");
-        $return['state'] = ($state != "") ? 'ok' : 'nok';
-        
         return $return;
-    }
+}
 
     public static function deamon_start() {
         self::deamon_stop();
