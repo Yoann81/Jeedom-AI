@@ -55,6 +55,21 @@ class ai_connector extends eqLogic {
     /**
      * GESTION DU DÉMON
      */
+    public static function deamon_info() {
+        $return = array();
+        $return['log'] = 'ai_connector_daemon';
+        $return['launchable'] = 'ok';
+        
+        // On vérifie si le processus python tourne
+        $state = exec("ps aux | grep ai_connector_daemon.py | grep -v grep");
+        if ($state != "") {
+            $return['state'] = 'ok';
+        } else {
+            $return['state'] = 'nok';
+        }
+        return $return;
+    }
+
     public static function deamon_start() {
         self::deamon_stop();
         $apikey = config::byKey('api', 'core');
@@ -75,28 +90,9 @@ class ai_connector extends eqLogic {
     }
 
     public static function deamon_stop() {
-        exec("ps aux | grep ai_connector_daemon.py | grep -v grep | awk '{print $2}' | xargs kill -9 > /dev/null 2>&1");
-    }
-    public static function deamon_info() {
-        $return = array();
-        $return['log'] = 'ai_connector_daemon';
-        $return['launchable'] = 'ok';
-        
-        // On vérifie si le processus python tourne
-        $state = exec("ps aux | grep ai_connector_daemon.py | grep -v grep");
-        if ($state != "") {
-            $return['state'] = 'ok';
-        } else {
-            $return['state'] = 'nok';
-        }
-        return $return;
-    }
-
-    public static function deamon_stop() {
         // Tue le démon proprement
         exec("ps aux | grep ai_connector_daemon.py | grep -v grep | awk '{print $2}' | xargs kill -9 > /dev/null 2>&1");
     }
-
     /**
      * EXÉCUTION DES COMMANDES
      */
