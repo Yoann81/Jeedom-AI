@@ -61,12 +61,10 @@ class ai_connector extends eqLogic {
         $return = array();
         $return['log'] = 'ai_connector_daemon';
         $return['launchable'] = 'ok';
-        
-        // On simplifie la vérification pour le test
         $state = exec("pgrep -f ai_connector_daemon.py");
         $return['state'] = ($state != "") ? 'ok' : 'nok';
-        
         return $return;
+
     }
 
     public static function deamon_start() {
