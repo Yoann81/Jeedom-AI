@@ -22,7 +22,18 @@ $("#table_cmd").sortable({
   tolerance: "intersect",
   forcePlaceholderSize: true
 });
-
+/* Fonction pour le bouton de sélection de commande (Modal Jeedom) */
+$(document).on('click', '.bt_selectCmdExpression', function () {
+    var _el = $(this).closest('.input-group').find('.configKey');
+    jeedom.cmd.getSelectModal({
+        resPanel: {
+            type: 'action',
+            subType: 'message'
+        }
+    }, function (_result) {
+        _el.value(_result.human);
+    });
+});
 /* Votre fonction d'affichage des commandes (mise à jour) */
 function addCmdToTable(_cmd) {
   if (!isset(_cmd)) {
