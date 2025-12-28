@@ -6,16 +6,8 @@
 class ai_connector extends eqLogic {
 
     public static function deamon_info() {
-        $return = array();
-        $return['log'] = 'ai_connector_daemon'; 
-        $return['launchable'] = 'ok'; 
-        
-        $state = exec("pgrep -f ai_connector_daemon.py");
-        $return['state'] = ($state != "") ? 'ok' : 'nok';
-        
-        $return['auto'] = 0;
-        return $return;
-    }
+    return array('log' => 'ai_connector_daemon', 'launchable' => 'ok', 'state' => 'nok', 'auto' => 0);
+}
 
     public static function deamon_start() {
         log::add('ai_connector', 'info', 'Lancement du démon AI Connector');
