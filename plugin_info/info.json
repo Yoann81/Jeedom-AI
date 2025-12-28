@@ -6,6 +6,10 @@
   "author": "MJoulia",
   "require": "4.0",
   "category": "communication",
-  "hasDependency": false,
+  "hasDependency": true,
+  "hasDaemon": true,
+  "max_count_daemon": 1,
+  "changelog": "",
+  "documentation": "",
   "hasControl": false
 }
