@@ -56,6 +56,7 @@ class ai_connector extends eqLogic {
      * GESTION DU DÉMON
      */
     public static function deamon_info() {
+        log::add('ai_connector', 'info', 'Lancement info deamon');
         $return = array();
         $return['log'] = 'ai_connector_daemon'; // Nom du log pour le bouton "Logs"
         $return['state'] = 'nok';
@@ -81,6 +82,7 @@ class ai_connector extends eqLogic {
 }
 
     public static function deamon_start() {
+        log::add('ai_connector', 'info', 'Lancement start deamon');
         self::deamon_stop();
         $apikey = config::byKey('api', 'core');
         $cmdId = config::byKey('voice_cmd_id', 'ai_connector');
@@ -100,6 +102,7 @@ class ai_connector extends eqLogic {
     }
 
     public static function deamon_stop() {
+        log::add('ai_connector', 'info', 'Lancement stop deamon');
         // Tue le démon proprement
         exec("ps aux | grep ai_connector_daemon.py | grep -v grep | awk '{print $2}' | xargs kill -9 > /dev/null 2>&1");
     }
