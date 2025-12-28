@@ -55,11 +55,18 @@ class ai_connector extends eqLogic {
     /**
      * GESTION DU DÉMON
      */
-    public static function deamon_info() {
+public static function deamon_info() {
         $return = array();
+        // On utilise 'ai_connector' (le log principal) car Jeedom sait qu'il existe
         $return['log'] = 'ai_connector';
-        $return['launchable'] = 'ok';
-        $return['state'] = 'nok'; // Force à nok pour tester l'affichage
+        
+        // C'EST CETTE LIGNE QUI FAIT APPARAÎTRE LE BLOC :
+        $return['launchable'] = 'ok'; 
+        
+        // Vérification du process
+        $state = exec("pgrep -f ai_connector_daemon.py");
+        $return['state'] = ($state != "") ? 'ok' : 'nok';
+        
         $return['auto'] = 0;
         return $return;
     }
