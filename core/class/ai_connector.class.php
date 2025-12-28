@@ -56,30 +56,25 @@ class ai_connector extends eqLogic {
      * GESTION DU DÉMON
      */
     public static function deamon_info() {
-        log::add('ai_connector', 'info', 'Lancement info deamon');
         $return = array();
-        $return['log'] = 'ai_connector_daemon'; // Nom du log pour le bouton "Logs"
-        $return['state'] = 'nok';
         
-        // Vérification simplifiée du processus (en attendant d'implémenter le fichier .pid)
+        // 1. Le nom du log SANS .log et SANS nok
+        $return['log'] = 'ai_connector_daemon'; 
+        
+        // 2. FORCE à 'ok' pour que le bloc s'affiche enfin
+        $return['launchable'] = 'ok'; 
+        
+        // 3. État du process
         $state = exec("pgrep -f ai_connector_daemon.py");
-        if ($state != "") {
-            $return['state'] = 'ok';
-        }
-
-        $return['launchable'] = 'ok';
+        $return['state'] = ($state != "") ? 'ok' : 'nok';
         
-        // On vérifie UNIQUEMENT ce qui est vital pour le lancement
-        $cmdId = config::byKey('voice_cmd_id', 'ai_connector');
+        $return['auto'] = 0;
         
-        if ($cmdId == '') {
-            $return['launchable'] = 'nok';
-            // Le message s'affichera dans le bloc s'il manque l'ID
-            $return['launchable_message'] = __('L\'ID de commande de destination n\'est pas configuré', __FILE__);
-        }
+        // Ajoute ce log pour voir ce que Jeedom reçoit réellement
+        log::add('ai_connector', 'debug', 'Retour deamon_info : ' . json_encode($return));
         
         return $return;
-}
+    }
 
     public static function deamon_start() {
         log::add('ai_connector', 'info', 'Lancement start deamon');
