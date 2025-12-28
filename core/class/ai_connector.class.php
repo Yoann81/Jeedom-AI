@@ -56,19 +56,16 @@ class ai_connector extends eqLogic {
      * GESTION DU DÉMON
      */
     public static function deamon_info() {
-        $return = array();
-        $return['log'] = 'ai_connector_daemon';
-        $return['launchable'] = 'ok';
-        
-        // On vérifie si le processus python tourne
-        $state = exec("ps aux | grep ai_connector_daemon.py | grep -v grep");
-        if ($state != "") {
-            $return['state'] = 'ok';
-        } else {
-            $return['state'] = 'nok';
-        }
-        return $return;
-    }
+    $return = array();
+    $return['log'] = 'ai_connector_daemon';
+    $return['launchable'] = 'ok';
+    
+    // On simplifie la vérification pour le test
+    $state = exec("pgrep -f ai_connector_daemon.py");
+    $return['state'] = ($state != "") ? 'ok' : 'nok';
+    
+    return $return;
+}
 
     public static function deamon_start() {
         self::deamon_stop();
