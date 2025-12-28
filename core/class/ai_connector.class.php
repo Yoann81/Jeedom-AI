@@ -56,15 +56,15 @@ class ai_connector extends eqLogic {
      * GESTION DU DÉMON
      */
     public static function deamon_info() {
-        log::add('ai_connector', 'error', 'TEST AFFICHAGE DAEMON'); // On force en "error" pour être sûr de le voir
         $return = array();
-        $return = array();
-        $return['log'] = 'ai_connector_daemon';
+        $return['log'] = 'ai_connector'; // Utilise le log principal pour tester
         $return['launchable'] = 'ok';
+        
+        // On simplifie le check du state pour le test
         $state = exec("pgrep -f ai_connector_daemon.py");
         $return['state'] = ($state != "") ? 'ok' : 'nok';
+        
         return $return;
-
     }
 
     public static function deamon_start() {
