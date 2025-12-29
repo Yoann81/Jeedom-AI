@@ -11,12 +11,11 @@ import wave # Import wave module for saving WAV files
 from urllib.parse import quote
 
 try:
-    import porcupine
-    from porcupine import Porcupine
+    import pvporcupine
     PORCUPINE_AVAILABLE = True
 except ImportError:
     PORCUPINE_AVAILABLE = False
-    print("Avertissement : Picovoice Porcupine n'est pas installé. Le mode Wakeword ne sera pas disponible.")
+    print("Avertissement : Picovoice Porcupine n est pas installe.")
 
 
 # --- Configuration par défaut ---
