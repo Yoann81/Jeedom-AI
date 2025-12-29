@@ -51,7 +51,8 @@ class ai_connector extends eqLogic {
             return;
         }
 
-        $log_file = jeedom::getLogPath('ai_connector_daemon');
+        $log_file = dirname(__FILE__) . '/../../../../log/ai_connector_daemon';
+
         touch($log_file);
         chown($log_file, 'www-data');
 
