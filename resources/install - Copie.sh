@@ -11,32 +11,32 @@ cd "$BASE_PATH"
 echo "--- Début de l'installation des dépendances de AI Connector ---"
 
 # 1. Nettoyage si une installation précédente a échoué
-# if [ -d "whisper.cpp" ]; then
-    # echo "Nettoyage de l'ancienne installation de whisper.cpp..."
-    # rm -rf whisper.cpp
-# fi
+if [ -d "whisper.cpp" ]; then
+    echo "Nettoyage de l'ancienne installation de whisper.cpp..."
+    rm -rf whisper.cpp
+fi
 
-2. Clonage du dépôt
-# echo "Clonage de Whisper.cpp depuis Github..."
-# git clone https://github.com/ggerganov/whisper.cpp.git
-# echo "Clonage terminé."
+# 2. Clonage du dépôt
+echo "Clonage de Whisper.cpp depuis Github..."
+git clone https://github.com/ggerganov/whisper.cpp.git
+echo "Clonage terminé."
 
-# cd whisper.cpp
+cd whisper.cpp
 
-3. Compilation optimisée pour Raspberry Pi
-# echo "Compilation de Whisper.cpp (cela peut prendre plusieurs minutes)..."
-# make -j4
-# echo "Compilation terminée."
+# 3. Compilation optimisée pour Raspberry Pi
+echo "Compilation de Whisper.cpp (cela peut prendre plusieurs minutes)..."
+make -j4
+echo "Compilation terminée."
 
-Déplacer l'exécutable principal au bon endroit et le renommer si nécessaire
-# echo "Déplacement de l'exécutable 'whisper-cli'..."
-# mv ./build/bin/main whisper-cli
-# echo "Exécutable placé."
+# Déplacer l'exécutable principal au bon endroit et le renommer si nécessaire
+echo "Déplacement de l'exécutable 'whisper-cli'..."
+mv ./build/bin/main whisper-cli
+echo "Exécutable placé."
 
-4. Téléchargement du modèle de langue
-# echo "Téléchargement du modèle de langue 'base'..."
-# bash ./models/download-ggml-model.sh base
-# echo "Modèle téléchargé."
+# 4. Téléchargement du modèle de langue
+echo "Téléchargement du modèle de langue 'base'..."
+bash ./models/download-ggml-model.sh base
+echo "Modèle téléchargé."
 
 # 5. Installation des dépendances Python pour le Wakeword (Picovoice Porcupine)
 echo "Installation des dépendances Python pour le Wakeword..."
