@@ -197,6 +197,7 @@ class ai_connector extends eqLogic {
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
         $rawResponse = curl_exec($ch);
+        log::add('ai_connector', 'debug', 'Raw AI API response: ' . $rawResponse); // Add this line for logging
         curl_close($ch);
         return json_decode($rawResponse, true);
     }
