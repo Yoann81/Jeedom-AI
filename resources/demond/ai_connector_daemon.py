@@ -9,7 +9,7 @@ from urllib.parse import quote
 
 # --- Configuration par défaut ---
 JEEDOM_URL = "http://127.0.0.1/core/api/jeeApi.php"
-WHISPER_PATH = "/var/www/html/plugins/ai_connector/resources/whisper.cpp/main"
+WHISPER_PATH = "/var/www/html/plugins/ai_connector/resources/whisper.cpp/whisper-cli"
 MODEL_PATH = "/var/www/html/plugins/ai_connector/resources/whisper.cpp/models/ggml-base.bin"
 TEMP_WAVE = "/tmp/ai_voice.wav"
 PID_FILE = '/tmp/jeedom/ai_connector/daemon.pid'

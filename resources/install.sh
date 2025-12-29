@@ -29,8 +29,8 @@ make -j4
 echo "Compilation terminée."
 
 # Déplacer l'exécutable principal au bon endroit
-echo "Déplacement de l'exécutable 'main'..."
-mv ./build/bin/main .
+echo "Déplacement de l'exécutable 'whisper-cli'..."
+mv ./build/bin/whisper-cli .
 echo "Exécutable placé."
 
 # 4. Téléchargement du modèle de langue
