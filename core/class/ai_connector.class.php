@@ -7,28 +7,31 @@ class ai_connector extends eqLogic {
 
     public static function deamon_info() {
         $return = array();
-        // Changer le nom du log peut aider à rafraîchir l'état dans Jeedom
-        $return['log'] = __CLASS__ . '_daemon'; 
+        $return['log'] = __CLASS__ . '_daemon';
         $return['launchable'] = 'ok';
-        
-        $pids = exec("pgrep -f ai_connector_daemon.py");
-        if (!empty($pids)) {
-            $return['state'] = 'ok';
-        } else {
-            $return['state'] = 'nok';
+        $return['state'] = 'nok';
+
+        $pid_file = '/tmp/jeedom/ai_connector/daemon.pid';
+
+        if (file_exists($pid_file)) {
+            $pid = trim(file_get_contents($pid_file));
+            if (posix_getpgid($pid)) { // Check if process exists
+                 $return['state'] = 'ok';
+            } else {
+                log::add('ai_connector', 'warning', 'Fichier PID trouvé mais processus ' . $pid . ' inexistant. Nettoyage.');
+                unlink($pid_file);
+            }
         }
-        
         return $return;
     }
 
     public static function deamon_start() {
-        log::add('ai_connector', 'info', 'Tentative de démarrage du démon (fonction deamon_start appelée).');
         self::deamon_stop();
         log::add('ai_connector', 'info', 'Lancement du démon Python en arrière-plan.');
 
         $eqLogics = eqLogic::byType('ai_connector', true);
         if (empty($eqLogics)) {
-            log::add('ai_connector', 'error', "Aucun équipement 'AI Connector' activé trouvé. Le démon ne peut pas démarrer.");
+            log::add('ai_connector', 'error', "Aucun équipement 'AI Connector' activé trouvé.");
             return;
         }
         $config_source = $eqLogics[0];
@@ -38,7 +41,7 @@ class ai_connector extends eqLogic {
         $deviceId = $config_source->getConfiguration('voice_device_id', '1');
         
         if (empty($cmdId)) {
-            log::add('ai_connector', 'error', 'ID de commande de retour (HP) non configuré. Le démon ne peut pas démarrer.');
+            log::add('ai_connector', 'error', 'ID de commande de retour (HP) non configuré.');
             return;
         }
 
@@ -49,7 +52,6 @@ class ai_connector extends eqLogic {
         }
 
         $log_file = log::getPathName(__CLASS__ . '_daemon');
-        // On s'assure que le fichier de log existe et est accessible en écriture pour www-data
         touch($log_file);
         chown($log_file, 'www-data');
 
@@ -67,17 +69,25 @@ class ai_connector extends eqLogic {
             $log_content = file_exists($log_file) ? file_get_contents($log_file) : "Fichier de log introuvable.";
             log::add('ai_connector', 'error', 'Contenu du log du démon : ' . $log_content);
         } else {
-            log::add('ai_connector', 'info', 'Succès ! Le démon est lancé. PID(s) : ' . $pids . '. Vérifiez le log "' . basename($log_file) . '" pour la sortie du script.');
+            log::add('ai_connector', 'info', 'Succès ! Le démon est lancé. PID(s) : ' . $pids);
         }
     }
 
     public static function deamon_stop() {
         log::add('ai_connector', 'info', 'Commande d\'arrêt du processus du démon envoyée.');
+        // On récupère le PID dans le fichier pour un arrêt plus ciblé
+        $pid_file = '/tmp/jeedom/ai_connector/daemon.pid';
+        if (file_exists($pid_file)) {
+            $pid = trim(file_get_contents($pid_file));
+            exec("kill " . $pid);
+            unlink($pid_file);
+        }
+        // Fallback au cas où le fichier pid n'existerait pas
         exec("pkill -f ai_connector_daemon.py");
     }
 
     public static function daemon_loop() {
-        // Vide pour éviter tout problème avec un cron résiduel.
+        // Vide.
     }
 
     public function postSave() {
