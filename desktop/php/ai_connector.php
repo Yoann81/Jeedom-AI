@@ -92,6 +92,18 @@ $eqLogics = eqLogic::byType('ai_connector');
                             </div>
                         </div>
                         <div class="form-group">
+                            <label class="col-sm-3 control-label">{{Activer le Wakeword (Picovoice)}}</label>
+                            <div class="col-sm-3">
+                                <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="configuration" data-l2key="porcupine_enable" />{{Activer}}</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">{{Clé d'accès Picovoice}}</label>
+                            <div class="col-sm-5">
+                                <input type="password" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="porcupine_access_key" placeholder="{{Votre clé d'accès Picovoice}}"/>
+                            </div>
+                        </div>
+                        <div class="form-group">
                             <label class="col-sm-3 control-label">{{Commande de retour (HP)}}</label>
                             <div class="col-sm-4">
                                 <div class="input-group">
