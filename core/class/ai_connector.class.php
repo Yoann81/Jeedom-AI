@@ -117,11 +117,11 @@ class ai_connector extends eqLogic {
         $response->save();
     }
 
-    public function processMessage($prompt) {
+    public function processMessage($userMessage) {
         $engine = $this->getConfiguration('engine', 'gemini');
         $apiKey = $this->getConfiguration('apiKey');
         $model = $this->getConfiguration('model');
-        $equipmentPrompt = $this->getConfiguration('prompt', ''); // Get the prompt from equipment configuration
+        $systemPrompt = $this->getConfiguration('prompt', ''); // Get the system prompt from equipment configuration
 
         if (empty($apiKey)) {
             $errorMsg = "La clé API n'est pas configurée pour l'équipement " . $this->getHumanName(true);
@@ -129,39 +129,44 @@ class ai_connector extends eqLogic {
             return $errorMsg;
         }
 
-        $finalPrompt = $equipmentPrompt; // Always start with the equipment's prompt
-
-        // If the equipment has no specific prompt, then consider using the user-provided prompt
-        if (empty($equipmentPrompt)) {
-            $finalPrompt = $prompt;
-        }
-
-        // If after all this, there's still no prompt, then it's an error.
-        if (empty($finalPrompt)) {
-            $errorMsg = "Aucun prompt n'est fourni et aucun prompt par défaut n'est configuré pour l'équipement " . $this->getHumanName(true);
+        // If neither system prompt nor user message is provided, error out
+        if (empty($systemPrompt) && empty($userMessage)) {
+            $errorMsg = "Aucun prompt système ni message utilisateur n'est fourni pour l'équipement " . $this->getHumanName(true);
             log::add('ai_connector', 'error', $errorMsg);
             return $errorMsg;
         }
 
         switch ($engine) {
             case 'openai':
-                return $this->callOpenAI($finalPrompt, $apiKey, $model);
+                return $this->callOpenAI($systemPrompt, $userMessage, $apiKey, $model);
             case 'mistral':
-                return $this->callMistral($finalPrompt, $apiKey, $model);
+                return $this->callMistral($systemPrompt, $userMessage, $apiKey, $model);
             case 'gemini':
             default:
-                return $this->callGemini($finalPrompt, $apiKey, $model);
+                return $this->callGemini($systemPrompt, $userMessage, $apiKey, $model);
         }
     }
 
     /**
      * MOTEURS IA (APPELS API) - Maintenant BIEN DANS LA CLASSE
      */
-    private function callGemini($prompt, $apiKey, $model) {
-        if (empty($prompt)) return "Le message est vide.";
+    private function callGemini($systemPrompt, $userMessage, $apiKey, $model) {
+        $finalPrompt = '';
+        if (!empty($systemPrompt)) {
+            $finalPrompt .= $systemPrompt;
+        }
+        if (!empty($userMessage)) {
+            if (!empty($finalPrompt)) {
+                $finalPrompt .= "\n\n"; // Add a separator if both are present
+            }
+            $finalPrompt .= $userMessage;
+        }
+
+        if (empty($finalPrompt)) return "Le message est vide."; // Should not happen with previous check
+
         $modelId = (empty($model)) ? 'gemini-1.5-flash' : str_replace(' ', '-', trim($model));
         $url = "https://generativelanguage.googleapis.com/v1beta/models/" . $modelId . ":generateContent?key=" . $apiKey;
-        $data = ["contents" => [["parts" => [["text" => $prompt]]]]];
+        $data = ["contents" => [["parts" => [["text" => $finalPrompt]]]]];
         log::add('ai_connector', 'debug', 'Sending to Gemini URL: ' . $url . ' with data: ' . json_encode($data)); // Add this line
         $response = $this->sendCurl($url, $data);
         
@@ -171,15 +176,21 @@ class ai_connector extends eqLogic {
         return "Erreur Gemini : " . ($response['error']['message'] ?? "Structure inconnue");
     }
 
-    private function callOpenAI($prompt, $apiKey, $model) {
+    private function callOpenAI($systemPrompt, $userMessage, $apiKey, $model) {
         $modelId = (empty($model)) ? 'gpt-4o-mini' : $model;
         $url = "https://api.openai.com/v1/chat/completions";
+        
+        $messages = [];
+        if (!empty($systemPrompt)) {
+            $messages[] = ["role" => "system", "content" => $systemPrompt];
+        }
+        if (!empty($userMessage)) {
+            $messages[] = ["role" => "user", "content" => $userMessage];
+        }
+        
         $data = [
             "model" => $modelId,
-            "messages" => [
-                ["role" => "system", "content" => "Assistant domotique Jeedom."],
-                ["role" => "user", "content" => $prompt]
-            ]
+            "messages" => $messages
         ];
         $headers = ['Content-Type: application/json', 'Authorization: Bearer ' . $apiKey];
         log::add('ai_connector', 'debug', 'Sending to OpenAI URL: ' . $url . ' with data: ' . json_encode($data)); // Add this line
@@ -187,10 +198,19 @@ class ai_connector extends eqLogic {
         return $response['choices'][0]['message']['content'] ?? "Erreur OpenAI";
     }
 
-    private function callMistral($prompt, $apiKey, $model) {
+    private function callMistral($systemPrompt, $userMessage, $apiKey, $model) {
         $modelId = (empty($model)) ? 'mistral-small-latest' : $model;
         $url = "https://api.mistral.ai/v1/chat/completions";
-        $data = ["model" => $modelId, "messages" => [["role" => "user", "content" => $prompt]]];
+        
+        $messages = [];
+        if (!empty($systemPrompt)) {
+            $messages[] = ["role" => "system", "content" => $systemPrompt];
+        }
+        if (!empty($userMessage)) {
+            $messages[] = ["role" => "user", "content" => $userMessage];
+        }
+        
+        $data = ["model" => $modelId, "messages" => $messages];
         $headers = ['Content-Type: application/json', 'Authorization: Bearer ' . $apiKey];
         log::add('ai_connector', 'debug', 'Sending to Mistral URL: ' . $url . ' with data: ' . json_encode($data)); // Add this line
         $response = $this->sendCurl($url, $data, $headers);
