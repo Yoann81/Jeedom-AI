@@ -147,14 +147,21 @@ def listen_wakeword(device_id, api_key, cmd_id, porcupine_access_key, porcupine_
             raise ValueError("Aucun wakeword spécifié. Veuillez configurer les wakewords par défaut ou un modèle personnalisé si vous n'utilisez pas les mots-clés par défaut.")
 
         pa = pyaudio.PyAudio()
+        try:
+            target_index = int(device_id)
+            print(f"Tentative d ouverture du flux sur l index : {target_index}")
+        except:
+            target_index = None
+
         audio_stream = pa.open(
-        rate=porcupine_instance.sample_rate,
-        channels=1, # Fixé à 1 pour le mono
-        format=pyaudio.paInt16,
-        input=True,
-        frames_per_buffer=porcupine_instance.frame_length,
-        input_device_index=int(device_id)
-    )
+            rate=porcupine_instance.sample_rate,
+            channels=1,
+            format=pyaudio.paInt16,
+            input=True,
+            frames_per_buffer=porcupine_instance.frame_length,
+            input_device_index=target_index,
+            start=True # On force le demarrage immediat
+        )
         print(f"Démon AI Multi-Connect démarré en mode Wakeword sur hw:{device_id},0. En attente de '{os.path.basename(keyword_path)}'...")
 
         # Buffer pour enregistrer la commande après le wakeword
