@@ -121,6 +121,7 @@ class ai_connector extends eqLogic {
         $engine = $this->getConfiguration('engine', 'gemini');
         $apiKey = $this->getConfiguration('apiKey');
         $model = $this->getConfiguration('model');
+        $defaultPrompt = $this->getConfiguration('prompt', ''); // Get the default prompt from configuration
 
         if (empty($apiKey)) {
             $errorMsg = "La clé API n'est pas configurée pour l'équipement " . $this->getHumanName(true);
@@ -128,14 +129,23 @@ class ai_connector extends eqLogic {
             return $errorMsg;
         }
 
+        // Use the provided prompt, or fallback to the default prompt if the provided one is empty
+        $finalPrompt = !empty($prompt) ? $prompt : $defaultPrompt;
+
+        if (empty($finalPrompt)) {
+            $errorMsg = "Aucun prompt n'est fourni et aucun prompt par défaut n'est configuré pour l'équipement " . $this->getHumanName(true);
+            log::add('ai_connector', 'error', $errorMsg);
+            return $errorMsg;
+        }
+
         switch ($engine) {
             case 'openai':
-                return $this->callOpenAI($prompt, $apiKey, $model);
+                return $this->callOpenAI($finalPrompt, $apiKey, $model);
             case 'mistral':
-                return $this->callMistral($prompt, $apiKey, $model);
+                return $this->callMistral($finalPrompt, $apiKey, $model);
             case 'gemini':
             default:
-                return $this->callGemini($prompt, $apiKey, $model);
+                return $this->callGemini($finalPrompt, $apiKey, $model);
         }
     }
 

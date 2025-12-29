@@ -133,6 +133,12 @@ $eqLogics = eqLogic::byType('ai_connector');
                                 <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="model" placeholder="ex: gemini-1.5-flash"/>
                             </div>
                         </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">{{Prompt par défaut}}</label>
+                            <div class="col-sm-6">
+                                <textarea class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="prompt" rows="5" placeholder="{{Décrivez le comportement de l'IA, par exemple : 'Tu es un assistant domotique utile. Réponds de manière concise.'}}"></textarea>
+                            </div>
+                        </div>
                     </fieldset>
                 </form>
             </div>
