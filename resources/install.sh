@@ -28,9 +28,9 @@ echo "Compilation de Whisper.cpp (cela peut prendre plusieurs minutes)..."
 make -j4
 echo "Compilation terminée."
 
-# Déplacer l'exécutable principal au bon endroit
+# Déplacer l'exécutable principal au bon endroit et le renommer si nécessaire
 echo "Déplacement de l'exécutable 'whisper-cli'..."
-mv ./build/bin/whisper-cli .
+mv ./build/bin/main whisper-cli
 echo "Exécutable placé."
 
 # 4. Téléchargement du modèle de langue
@@ -38,7 +38,15 @@ echo "Téléchargement du modèle de langue 'base'..."
 bash ./models/download-ggml-model.sh base
 echo "Modèle téléchargé."
 
-# 5. Gestion des droits
+# 5. Installation des dépendances Python pour le Wakeword (Picovoice Porcupine)
+echo "Installation des dépendances Python pour le Wakeword..."
+sudo apt-get update
+sudo apt-get install -y portaudio19-dev
+sudo pip3 install picovoice-porcupine
+sudo pip3 install PyAudio
+echo "Dépendances Python installées."
+
+# 6. Gestion des droits
 echo "Configuration des permissions..."
 
 # Ajout de l'utilisateur www-data au groupe audio pour l'accès au micro
