@@ -42,8 +42,8 @@ echo "Modèle téléchargé."
 echo "Installation des dépendances Python pour le Wakeword..."
 sudo apt-get update
 sudo apt-get install -y portaudio19-dev
-sudo pip3 install picovoice-porcupine
-sudo pip3 install PyAudio
+sudo /var/www/html/plugins/ai_connector/resources/python_venv/bin/python3 -m pip install picovoice-porcupine
+sudo /var/www/html/plugins/ai_connector/resources/python_venv/bin/python3 -m pip install PyAudio
 echo "Dépendances Python installées."
 
 # 6. Gestion des droits
