@@ -22,8 +22,25 @@ class ai_connector extends eqLogic {
     }
 
     public static function deamon_start() {
-        log::add('ai_connector', 'info', 'Débogage final : Lancement en avant-plan...');
+        log::add('ai_connector', 'info', 'Tentative de démarrage du démon (fonction deamon_start appelée).');
         self::deamon_stop();
+        log::add('ai_connector', 'info', 'Lancement du démon Python en arrière-plan.');
+
+        $eqLogics = eqLogic::byType('ai_connector', true);
+        if (empty($eqLogics)) {
+            log::add('ai_connector', 'error', "Aucun équipement 'AI Connector' activé trouvé. Le démon ne peut pas démarrer.");
+            return;
+        }
+        $config_source = $eqLogics[0];
+
+        $apikey = config::byKey('api', 'core');
+        $cmdId = $config_source->getConfiguration('voice_cmd_id');
+        $deviceId = $config_source->getConfiguration('voice_device_id', '1');
+        
+        if (empty($cmdId)) {
+            log::add('ai_connector', 'error', 'ID de commande de retour (HP) non configuré. Le démon ne peut pas démarrer.');
+            return;
+        }
 
         $path = realpath(dirname(__FILE__) . '/../../resources/demond/ai_connector_daemon.py');
         if (!file_exists($path)) {
@@ -31,24 +48,27 @@ class ai_connector extends eqLogic {
             return;
         }
 
-        // Commande de base pour tester
-        $cmd = "python3 " . escapeshellarg($path) . " --help";
-        log::add('ai_connector', 'debug', "Commande de test : " . $cmd);
+        $log_file = log::getPathName(__CLASS__ . '_daemon');
+        // On s'assure que le fichier de log existe et est accessible en écriture pour www-data
+        touch($log_file);
+        chown($log_file, 'www-data');
 
-        // Exécution en avant-plan avec capture de la sortie
-        $output = array();
-        $return_var = 0;
-        exec($cmd . ' 2>&1', $output, $return_var);
-
-        if ($return_var !== 0) {
-            log::add('ai_connector', 'error', 'ÉCHEC de l\'exécution de Python. Code de retour : ' . $return_var);
-            log::add('ai_connector', 'error', 'Sortie de la commande : ' . implode("\n", $output));
+        $cmd = "python3 " . escapeshellarg($path) . " --apikey " . escapeshellarg($apikey) . " --cmd_id " . escapeshellarg($cmdId) . " --device_id " . escapeshellarg($deviceId);
+        $full_cmd = $cmd . " >> " . $log_file . " 2>&1 &";
+        
+        log::add('ai_connector', 'debug', "Commande de lancement : " . $full_cmd);
+        exec($full_cmd);
+        
+        sleep(2);
+        
+        $pids = exec("pgrep -f ai_connector_daemon.py");
+        if (empty($pids)) {
+            log::add('ai_connector', 'error', 'Échec critique: Le processus Python est introuvable après le lancement. Vérifiez le log du démon.');
+            $log_content = file_exists($log_file) ? file_get_contents($log_file) : "Fichier de log introuvable.";
+            log::add('ai_connector', 'error', 'Contenu du log du démon : ' . $log_content);
         } else {
-            log::add('ai_connector', 'info', 'SUCCÈS de l\'exécution de Python. Le script a répondu.');
-            log::add('ai_connector', 'info', 'Sortie de la commande : ' . implode("\n", $output));
+            log::add('ai_connector', 'info', 'Succès ! Le démon est lancé. PID(s) : ' . $pids . '. Vérifiez le log "' . basename($log_file) . '" pour la sortie du script.');
         }
-
-        log::add('ai_connector', 'info', 'Débogage final terminé. Si vous ne voyez pas de "SUCCÈS" ou "ÉCHEC" ci-dessus, le problème est très profond.');
     }
 
     public static function deamon_stop() {
