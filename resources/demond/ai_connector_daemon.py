@@ -71,9 +71,18 @@ def listen(device_id, api_key, cmd_id):
         print("Démon AI Multi-Connect : Transcription audio...")
         try:
             cmd = [WHISPER_PATH, "-m", MODEL_PATH, "-f", TEMP_WAVE, "-nt", "-l", "fr"]
-            result = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
-            text = result.decode('utf-8').strip()
-            print(f"Démon AI Multi-Connect : Texte transcrit : '{text}'") # Add this line
+            
+            # Capture stdout for transcription, stderr for diagnostics
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            stdout, stderr = process.communicate()
+            
+            text = stdout.strip() # Only take stdout for the transcription
+
+            # Log any stderr from whisper-cli separately
+            if stderr:
+                print(f"Whisper CLI stderr: {stderr.strip()}")
+
+            print(f"Démon AI Multi-Connect : Texte transcrit : '{text}'")
             if text:
                 send_to_jeedom(text, api_key, cmd_id)
         except subprocess.CalledProcessError as e:
