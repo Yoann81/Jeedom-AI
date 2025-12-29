@@ -52,7 +52,7 @@ sudo apt-get install -y portaudio19-dev
 sudo python3 -m venv --upgrade-deps "$PYTHON_VENV_PATH"
 
 # Vérification critique de l'environnement virtuel
-# if [ -L "$PYTHON_VENV_PATH/bin/python3" ] && [ "$(readlink -f "$PYTHON_VENV_PATH/bin/python3")" == "$(readlink -f "/usr/bin/python3")" ]; then
+# if [ ! -f "$PYTHON_VENV_PATH/bin/python3" ]; then
     # echo " "
     # echo "##########################################################################"
     # echo "  ERREUR CRITIQUE : Environnement Virtuel Invalide"

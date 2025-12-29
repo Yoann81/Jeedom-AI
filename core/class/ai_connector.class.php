@@ -72,9 +72,12 @@ class ai_connector extends eqLogic {
         
         if ($porcupineEnable) {
             if (empty($porcupineAccessKey)) {
-                log::add('ai_connector', 'error', 'Clé d\'accès Picovoice non configurée pour l\'équipement d\'écoute (' . $listeningEqLogic->getHumanName() . ') alors que le wakeword est activé. Le wakeword ne sera pas utilisé.');
+                log::add('ai_connector', 'error', 'Cle Picovoice manquante pour ' . $listeningEqLogic->getHumanName());
+                // Optionnel : on peut forcer le mode sans wakeword ici
             } else {
-                $cmd .= " --porcupine_enable 1 --porcupine_access_key " . escapeshellarg($porcupineAccessKey);
+                $cmd .= " --porcupine_enable 1";
+                $cmd .= " --porcupine_access_key " . escapeshellarg($porcupineAccessKey);
+                
                 if (!empty($porcupineWakewordNames)) {
                     $cmd .= " --porcupine_wakeword_names " . escapeshellarg($porcupineWakewordNames);
                 }
@@ -84,6 +87,7 @@ class ai_connector extends eqLogic {
         $full_cmd = $cmd . " >> " . $log_file . " 2>&1 &";
         
         log::add('ai_connector', 'debug', "Commande de lancement : " . $full_cmd);
+        log::add('ai_connector', 'debug', "COMMANDE REELLE ENVOYEE : " . $full_cmd);
         exec($full_cmd);
         
         sleep(2);
