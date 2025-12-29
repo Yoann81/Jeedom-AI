@@ -7,7 +7,7 @@ class ai_connector extends eqLogic {
 
     public static function deamon_info() {
         $return = array();
-        $return['log'] = __CLASS__ . '_daemon';
+        $return['log'] = 'ai_connector_daemon';
         $return['launchable'] = 'ok';
         $return['state'] = 'nok';
 
@@ -51,7 +51,7 @@ class ai_connector extends eqLogic {
             return;
         }
 
-        $log_file = log::getPathName(__CLASS__ . '_daemon');
+        $log_file = jeedom::getLogPath('ai_connector_daemon');
         touch($log_file);
         chown($log_file, 'www-data');
 
