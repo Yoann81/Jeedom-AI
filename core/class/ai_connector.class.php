@@ -29,19 +29,28 @@ class ai_connector extends eqLogic {
         self::deamon_stop();
         log::add('ai_connector', 'info', 'Lancement du démon Python en arrière-plan.');
 
-        $eqLogics = eqLogic::byType('ai_connector', true);
-        if (empty($eqLogics)) {
-            log::add('ai_connector', 'error', "Aucun équipement 'AI Connector' activé trouvé.");
-            return;
+        $listeningEqLogic = null;
+        $activeListeners = [];
+        foreach (eqLogic::byType('ai_connector', true) as $eqLogic) {
+            if ($eqLogic->getConfiguration('voice_enable', 0) == 1) {
+                $activeListeners[] = $eqLogic;
+            }
         }
-        $config_source = $eqLogics[0];
+
+        if (empty($activeListeners)) {
+            log::add('ai_connector', 'error', "Aucun équipement 'AI Connector' activé avec l'écoute vocale activée trouvé. Le démon ne peut pas démarrer.");
+            return;
+        } elseif (count($activeListeners) > 1) {
+            log::add('ai_connector', 'warning', "Plusieurs équipements 'AI Connector' ont l'écoute vocale activée. Seul le premier trouvé ('" . $activeListeners[0]->getHumanName() . "') sera utilisé par le démon.");
+        }
+        $listeningEqLogic = $activeListeners[0];
 
         $apikey = config::byKey('api', 'core');
-        $cmdId = $config_source->getConfiguration('voice_cmd_id');
-        $deviceId = $config_source->getConfiguration('voice_device_id', '1');
+        $cmdId = $listeningEqLogic->getConfiguration('voice_cmd_id');
+        $deviceId = $listeningEqLogic->getConfiguration('voice_device_id', '1');
         
         if (empty($cmdId)) {
-            log::add('ai_connector', 'error', 'ID de commande de retour (HP) non configuré.');
+            log::add('ai_connector', 'error', 'ID de commande de retour (HP) non configuré pour l\'équipement d\'écoute (' . $listeningEqLogic->getHumanName() . ').');
             return;
         }
 
