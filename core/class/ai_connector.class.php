@@ -157,6 +157,7 @@ class ai_connector extends eqLogic {
         $modelId = (empty($model)) ? 'gemini-1.5-flash' : str_replace(' ', '-', trim($model));
         $url = "https://generativelanguage.googleapis.com/v1beta/models/" . $modelId . ":generateContent?key=" . $apiKey;
         $data = ["contents" => [["parts" => [["text" => $prompt]]]]];
+        log::add('ai_connector', 'debug', 'Sending to Gemini URL: ' . $url . ' with data: ' . json_encode($data)); // Add this line
         $response = $this->sendCurl($url, $data);
         
         if (isset($response['candidates'][0]['content']['parts'][0]['text'])) {
@@ -176,6 +177,7 @@ class ai_connector extends eqLogic {
             ]
         ];
         $headers = ['Content-Type: application/json', 'Authorization: Bearer ' . $apiKey];
+        log::add('ai_connector', 'debug', 'Sending to OpenAI URL: ' . $url . ' with data: ' . json_encode($data)); // Add this line
         $response = $this->sendCurl($url, $data, $headers);
         return $response['choices'][0]['message']['content'] ?? "Erreur OpenAI";
     }
@@ -185,6 +187,7 @@ class ai_connector extends eqLogic {
         $url = "https://api.mistral.ai/v1/chat/completions";
         $data = ["model" => $modelId, "messages" => [["role" => "user", "content" => $prompt]]];
         $headers = ['Content-Type: application/json', 'Authorization: Bearer ' . $apiKey];
+        log::add('ai_connector', 'debug', 'Sending to Mistral URL: ' . $url . ' with data: ' . json_encode($data)); // Add this line
         $response = $this->sendCurl($url, $data, $headers);
         return $response['choices'][0]['message']['content'] ?? "Erreur Mistral";
     }
