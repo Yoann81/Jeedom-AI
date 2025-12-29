@@ -10,11 +10,11 @@ cd "$BASE_PATH"
 
 echo "--- Début de l'installation des dépendances de AI Connector ---"
 
-# 1. Nettoyage si une installation précédente a échoué (désactivé pour éviter la suppression à chaque relance)
-# if [ -d "whisper.cpp" ]; then
-#     echo "Nettoyage de l'ancienne installation de whisper.cpp..."
-#     rm -rf whisper.cpp
-# fi
+# 1. Nettoyage si une installation précédente a échoué
+if [ -d "whisper.cpp" ]; then
+    echo "Nettoyage de l'ancienne installation de whisper.cpp..."
+    rm -rf whisper.cpp
+fi
 
 # 2. Clonage du dépôt
 echo "Clonage de Whisper.cpp depuis Github..."
