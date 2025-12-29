@@ -80,6 +80,33 @@ sudo "$PYTHON_VENV_PATH/bin/python3" -m pip install --force-reinstall --upgrade 
 sudo "$PYTHON_VENV_PATH/bin/python3" -m pip install --force-reinstall --upgrade pyserial
 sudo "$PYTHON_VENV_PATH/bin/python3" -m pip install pvporcupine
 sudo "$PYTHON_VENV_PATH/bin/python3" -m pip install PyAudio
+
+# Vérification post-installation des modules critiques
+if ! sudo "$PYTHON_VENV_PATH/bin/pip" list | grep -q "pvporcupine"; then
+    echo " "
+    echo "##########################################################################"
+    echo "  ERREUR CRITIQUE : Installation de pvporcupine échouée"
+    echo "##########################################################################"
+    echo "  Le module 'pvporcupine' n'a pas pu être installé dans l'environnement virtuel."
+    echo "  Veuillez vérifier les logs ci-dessus pour d'éventuelles erreurs lors de l'installation."
+    echo "  L'installation ne peut pas continuer sans ce module."
+    echo "##########################################################################"
+    echo " "
+    exit 1
+fi
+
+if ! sudo "$PYTHON_VENV_PATH/bin/pip" list | grep -q "PyAudio"; then
+    echo " "
+    echo "##########################################################################"
+    echo "  ERREUR CRITIQUE : Installation de PyAudio échouée"
+    echo "##########################################################################"
+    echo "  Le module 'PyAudio' n'a pas pu être installé dans l'environnement virtuel."
+    echo "  Veuillez vérifier les logs ci-dessus pour d'éventuelles erreurs lors de l'installation."
+    echo "  L'installation ne peut pas continuer sans ce module."
+    echo "##########################################################################"
+    echo " "
+    exit 1
+fi
 echo "Dépendances Python installées."
 
 # 6. Gestion des droits
