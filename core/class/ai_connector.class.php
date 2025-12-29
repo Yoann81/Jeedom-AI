@@ -50,6 +50,7 @@ class ai_connector extends eqLogic {
         $deviceId = $listeningEqLogic->getConfiguration('voice_device_id', '1');
         $porcupineEnable = $listeningEqLogic->getConfiguration('porcupine_enable', 0);
         $porcupineAccessKey = $listeningEqLogic->getConfiguration('porcupine_access_key', '');
+        $porcupineWakewordNames = $listeningEqLogic->getConfiguration('porcupine_wakeword_names', '');
         
         if (empty($cmdId)) {
             log::add('ai_connector', 'error', 'ID de commande de retour (HP) non configuré pour l\'équipement d\'écoute (' . $listeningEqLogic->getHumanName() . ').');
@@ -74,6 +75,9 @@ class ai_connector extends eqLogic {
                 log::add('ai_connector', 'error', 'Clé d\'accès Picovoice non configurée pour l\'équipement d\'écoute (' . $listeningEqLogic->getHumanName() . ') alors que le wakeword est activé. Le wakeword ne sera pas utilisé.');
             } else {
                 $cmd .= " --porcupine_enable 1 --porcupine_access_key " . escapeshellarg($porcupineAccessKey);
+                if (!empty($porcupineWakewordNames)) {
+                    $cmd .= " --porcupine_wakeword_names " . escapeshellarg($porcupineWakewordNames);
+                }
             }
         }
         

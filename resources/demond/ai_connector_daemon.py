@@ -118,7 +118,7 @@ def listen_periodic(device_id, api_key, cmd_id):
         time.sleep(0.1) # Small delay to prevent 100% CPU usage
 
 
-def listen_wakeword(device_id, api_key, cmd_id, porcupine_access_key):
+def listen_wakeword(device_id, api_key, cmd_id, porcupine_access_key, porcupine_wakeword_names):
     """Boucle d'écoute avec détection de wakeword Porcupine."""
     if not PORCUPINE_AVAILABLE:
         print("Erreur : Picovoice Porcupine n'est pas disponible. Le mode Wakeword est désactivé.")
@@ -130,17 +130,18 @@ def listen_wakeword(device_id, api_key, cmd_id, porcupine_access_key):
 
     try:
         # Initialisation de Porcupine
-        # Pour le moment, utilisation d'un wakeword générique 'Hey Jeedom' si possible
-        # Il faudrait idéalement pouvoir configurer cela via Jeedom.
-        keyword_path = porcupine.KEYWORD_PATHS['fr']['hey jeedom'] # Exemple pour 'hey jeedom' en français
-        # Si vous utilisez un modèle de wakeword personnalisé (fichier .ppn) :
-        # keyword_path = "/chemin/vers/votre/wakeword.ppn" 
-
-        porcupine_instance = Porcupine(
-            access_key=porcupine_access_key,
-            keyword_paths=[keyword_path],
-            sensitivities=[0.5] # Sensibilité de 0.0 à 1.0
-        )
+        if porcupine_wakeword_names:
+            wakeword_list = [w.strip() for w in porcupine_wakeword_names.split(',') if w.strip()]
+            if not wakeword_list:
+                raise ValueError("Aucun nom de wakeword valide fourni pour Picovoice Porcupine.")
+            print(f"Utilisation des wakewords par défaut : {', '.join(wakeword_list)}")
+            porcupine_instance = Porcupine(
+                access_key=porcupine_access_key,
+                keywords=wakeword_list,
+                sensitivities=[0.5] * len(wakeword_list) # Assigner une sensibilité par wakeword
+            )
+        else:
+            raise ValueError("Aucun wakeword spécifié. Veuillez configurer les wakewords par défaut ou un modèle personnalisé si vous n'utilisez pas les mots-clés par défaut.")
 
         pa = pyaudio.PyAudio()
         audio_stream = pa.open(
@@ -183,7 +184,7 @@ def listen_wakeword(device_id, api_key, cmd_id, porcupine_access_key):
             else:
                 keyword_index = porcupine_instance.process(pcm_data)
                 if keyword_index >= 0:
-                    print(f"Démon AI Multi-Connect : Wakeword détecté ('{os.path.basename(porcupine_instance.keyword_paths[keyword_index])}') !")
+                    print(f"Démon AI Multi-Connect : Wakeword détecté ('{porcupine_instance.keyword_names[keyword_index]}') !")
                     is_recording_command = True
                     command_audio_buffer = [] # Start fresh recording after wakeword
                     print("Démon AI Multi-Connect : Début d'enregistrement de la commande vocale...")
@@ -205,6 +206,7 @@ if __name__ == "__main__":
     parser.add_argument("--device_id", default="1", help="ID du périphérique d'enregistrement audio (par défaut: 1).")
     parser.add_argument("--porcupine_enable", type=int, default=0, help="Activer la détection de wakeword Picovoice.")
     parser.add_argument("--porcupine_access_key", default="", help="Clé d'accès Picovoice pour le wakeword.")
+    parser.add_argument("--porcupine_wakeword_names", default="", help="Liste des noms de wakewords Picovoice par défaut (séparés par des virgules).")
     args = parser.parse_args()
 
     # --- Boilerplate de démon Jeedom ---
@@ -229,7 +231,7 @@ if __name__ == "__main__":
                 print("Erreur : Clé d'accès Picovoice manquante. Rebasculement en mode périodique.", file=sys.stderr)
                 listen_periodic(args.device_id, args.apikey, args.cmd_id)
             else:
-                listen_wakeword(args.device_id, args.apikey, args.cmd_id, args.porcupine_access_key)
+                listen_wakeword(args.device_id, args.apikey, args.cmd_id, args.porcupine_access_key, args.porcupine_wakeword_names)
         else:
             print("Démon AI Multi-Connect : Mode d'écoute périodique activé (sans wakeword).")
             listen_periodic(args.device_id, args.apikey, args.cmd_id)
