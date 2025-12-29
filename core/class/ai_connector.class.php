@@ -210,9 +210,6 @@ class ai_connectorCmd extends cmd {
         }
         
         $prompt = $_options['message'] ?? '';
-        if (empty($prompt)) {
-            return; // Ne rien faire si le message est vide
-        }
 
         // Appeler la nouvelle méthode publique sur l'équipement parent
         $response = $eqLogic->processMessage($prompt);
