@@ -44,7 +44,7 @@ class ai_connector extends eqLogic {
 
     public static function deamon_stop() {
         log::add('ai_connector', 'info', 'Arrêt du démon AI Connector');
-        exec("pgrep -f ai_connector_daemon.py | xargs kill -9 > /dev/null 2>&1");
+        exec("pkill -f ai_connector_daemon.py");
     }
 
     public function postSave() {
