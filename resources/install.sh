@@ -10,6 +10,15 @@ cd "$BASE_PATH"
 
 echo "--- Début de l'installation des dépendances de AI Connector ---"
 
+echo "Installation des librairies systeme audio..."
+sudo apt-get install -y libportaudio2 libportaudiocpp0 portaudio19-dev python3-pyaudio
+echo "Nettoyage des serveurs audio inutiles (JACK)..."
+sudo apt-get remove --purge -y jackd2 jackd libjack-jackd2-0
+sudo apt-get autoremove -y
+
+echo "Installation des dependances audio..."
+sudo apt-get install -y python3-pyaudio libasound2-dev
+
 # 1. Nettoyage si une installation précédente a échoué
 # if [ -d "whisper.cpp" ]; then
     # echo "Nettoyage de l'ancienne installation de whisper.cpp..."

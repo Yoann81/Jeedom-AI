@@ -10,6 +10,10 @@ import pyaudio
 import wave # Import wave module for saving WAV files
 from urllib.parse import quote
 
+# Redirection de stderr vers dev/null au niveau systeme
+devnull = os.open(os.devnull, os.O_WRONLY)
+os.dup2(devnull, 2)
+
 try:
     import pvporcupine
     PORCUPINE_AVAILABLE = True
