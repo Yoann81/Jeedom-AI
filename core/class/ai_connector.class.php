@@ -48,6 +48,8 @@ class ai_connector extends eqLogic {
         $apikey = config::byKey('api', 'core');
         $cmdId = $listeningEqLogic->getConfiguration('voice_cmd_id');
         $deviceId = $listeningEqLogic->getConfiguration('voice_device_id', '1');
+        $porcupineEnable = $listeningEqLogic->getConfiguration('porcupine_enable', 0);
+        $porcupineAccessKey = $listeningEqLogic->getConfiguration('porcupine_access_key', '');
         
         if (empty($cmdId)) {
             log::add('ai_connector', 'error', 'ID de commande de retour (HP) non configuré pour l\'équipement d\'écoute (' . $listeningEqLogic->getHumanName() . ').');
@@ -66,6 +68,15 @@ class ai_connector extends eqLogic {
         chown($log_file, 'www-data');
 
         $cmd = "nohup python3 " . escapeshellarg($path) . " --apikey " . escapeshellarg($apikey) . " --cmd_id " . escapeshellarg($cmdId) . " --device_id " . escapeshellarg($deviceId);
+        
+        if ($porcupineEnable) {
+            if (empty($porcupineAccessKey)) {
+                log::add('ai_connector', 'error', 'Clé d\'accès Picovoice non configurée pour l\'équipement d\'écoute (' . $listeningEqLogic->getHumanName() . ') alors que le wakeword est activé. Le wakeword ne sera pas utilisé.');
+            } else {
+                $cmd .= " --porcupine_enable 1 --porcupine_access_key " . escapeshellarg($porcupineAccessKey);
+            }
+        }
+        
         $full_cmd = $cmd . " >> " . $log_file . " 2>&1 &";
         
         log::add('ai_connector', 'debug', "Commande de lancement : " . $full_cmd);
