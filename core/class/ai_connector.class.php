@@ -80,6 +80,28 @@ class ai_connector extends eqLogic {
         $response->save();
     }
 
+    public function processMessage($prompt) {
+        $engine = $this->getConfiguration('engine', 'gemini');
+        $apiKey = $this->getConfiguration('apiKey');
+        $model = $this->getConfiguration('model');
+
+        if (empty($apiKey)) {
+            $errorMsg = "La clé API n'est pas configurée pour l'équipement " . $this->getHumanName(true);
+            log::add('ai_connector', 'error', $errorMsg);
+            return $errorMsg;
+        }
+
+        switch ($engine) {
+            case 'openai':
+                return $this->callOpenAI($prompt, $apiKey, $model);
+            case 'mistral':
+                return $this->callMistral($prompt, $apiKey, $model);
+            case 'gemini':
+            default:
+                return $this->callGemini($prompt, $apiKey, $model);
+        }
+    }
+
     /**
      * MOTEURS IA (APPELS API) - Maintenant BIEN DANS LA CLASSE
      */
@@ -139,6 +161,16 @@ class ai_connectorCmd extends cmd {
         if (!is_object($eqLogic)) {
             throw new Exception(__('Commande non liée à un équipement', __FILE__));
         }
-        // Ici, il faudra ajouter la logique pour appeler les fonctions callIA
+        
+        $prompt = $_options['message'] ?? '';
+        if (empty($prompt)) {
+            return; // Ne rien faire si le message est vide
+        }
+
+        // Appeler la nouvelle méthode publique sur l'équipement parent
+        $response = $eqLogic->processMessage($prompt);
+
+        // Mettre à jour la commande 'reponse' avec le résultat
+        $eqLogic->checkAndUpdateCmd('reponse', $response);
     }
 }
