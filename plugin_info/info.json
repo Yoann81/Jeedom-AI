@@ -4,6 +4,7 @@
   "description": "Connecteur pour Intelligences Artificielles (Gemini, OpenAI, Mistral) avec support de l'écoute vocale locale.",
   "licence": "GPL",
   "author": "Raven",
+  "version" :"1.0.0",
   "require": "4.2",
   "category": "communication",
   "type": "communication",
