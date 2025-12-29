@@ -56,7 +56,7 @@ class ai_connector extends eqLogic {
         touch($log_file);
         chown($log_file, 'www-data');
 
-        $cmd = "python3 " . escapeshellarg($path) . " --apikey " . escapeshellarg($apikey) . " --cmd_id " . escapeshellarg($cmdId) . " --device_id " . escapeshellarg($deviceId);
+        $cmd = "nohup python3 " . escapeshellarg($path) . " --apikey " . escapeshellarg($apikey) . " --cmd_id " . escapeshellarg($cmdId) . " --device_id " . escapeshellarg($deviceId);
         $full_cmd = $cmd . " >> " . $log_file . " 2>&1 &";
         
         log::add('ai_connector', 'debug', "Commande de lancement : " . $full_cmd);
