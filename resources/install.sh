@@ -28,6 +28,11 @@ echo "Compilation de Whisper.cpp (cela peut prendre plusieurs minutes)..."
 make -j4
 echo "Compilation terminée."
 
+# Déplacer l'exécutable principal au bon endroit
+echo "Déplacement de l'exécutable 'main'..."
+mv ./build/bin/main .
+echo "Exécutable placé."
+
 # 4. Téléchargement du modèle de langue
 echo "Téléchargement du modèle de langue 'base'..."
 bash ./models/download-ggml-model.sh base
