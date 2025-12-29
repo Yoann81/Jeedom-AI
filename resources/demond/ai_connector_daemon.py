@@ -17,15 +17,21 @@ except ImportError:
     PORCUPINE_AVAILABLE = False
     print("Avertissement : Picovoice Porcupine n est pas installe.")
 
+import os
+import sys
 from ctypes import *
 
-# Fonction pour supprimer les messages d'erreur ALSA dans le terminal
+# On definit un gestionnaire d erreur vide pour ALSA
 ERROR_HANDLER_FUNC = CFUNCTYPE(None, c_char_p, c_int, c_char_p, c_int, c_char_p)
 def py_error_handler(filename, line, function, err, fmt):
     pass
 c_error_handler = ERROR_HANDLER_FUNC(py_error_handler)
-asound = cdll.LoadLibrary('libasound.so.2')
-asound.snd_lib_error_set_handler(c_error_handler)
+
+try:
+    asound = cdll.LoadLibrary('libasound.so.2')
+    asound.snd_lib_error_set_handler(c_error_handler)
+except:
+    pass # On ignore si la librairie n'est pas trouvée
 
 # --- Configuration par défaut ---
 JEEDOM_URL = "http://127.0.0.1/core/api/jeeApi.php"
@@ -168,10 +174,9 @@ def listen_wakeword(device_id, api_key, cmd_id, porcupine_access_key, porcupine_
             format=pyaudio.paInt16,
             input=True,
             frames_per_buffer=porcupine_instance.frame_length,
-            input_device_index=target_index,
-            start=True # On force le demarrage immediat
+            input_device_index=int(device_id) 
         )
-        print(f"Démon AI Multi-Connect démarré en mode Wakeword sur hw:{device_id},0. En attente de '{os.path.basename(keyword_path)}'...")
+        print(f"Démon AI Multi-Connect démarré en mode Wakeword sur hw:{device_id},0. En attente de '{', '.join(wakeword_list)}'...")
 
         # Buffer pour enregistrer la commande après le wakeword
         command_audio_buffer = []
