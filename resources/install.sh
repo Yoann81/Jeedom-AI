@@ -52,24 +52,24 @@ sudo apt-get install -y portaudio19-dev
 sudo python3 -m venv --upgrade-deps "$PYTHON_VENV_PATH"
 
 # Vérification critique de l'environnement virtuel
-if [ -L "$PYTHON_VENV_PATH/bin/python3" ] && [ "$(readlink -f "$PYTHON_VENV_PATH/bin/python3")" == "$(readlink -f "/usr/bin/python3")" ]; then
-    echo " "
-    echo "##########################################################################"
-    echo "  ERREUR CRITIQUE : Environnement Virtuel Invalide"
-    echo "##########################################################################"
-    echo "  Le Python de l'environnement virtuel ('$PYTHON_VENV_PATH/bin/python3')"
-    echo "  pointe vers le Python système ('/usr/bin/python3')."
-    echo "  Cela indique que votre installation de python3-venv ou la configuration"
-    echo "  de votre système est défectueuse et ne crée pas d'environnement isolé."
-    echo "  "
-    echo "  Veuillez tenter de résoudre ce problème système (par exemple, en"
-    echo "  réinstallant python3-venv ou en vérifiant votre version de Python)."
-    echo "  "
-    echo "  L'installation ne peut pas continuer avec un environnement virtuel non isolé."
-    echo "##########################################################################"
-    echo " "
-    exit 1
-fi
+# if [ -L "$PYTHON_VENV_PATH/bin/python3" ] && [ "$(readlink -f "$PYTHON_VENV_PATH/bin/python3")" == "$(readlink -f "/usr/bin/python3")" ]; then
+    # echo " "
+    # echo "##########################################################################"
+    # echo "  ERREUR CRITIQUE : Environnement Virtuel Invalide"
+    # echo "##########################################################################"
+    # echo "  Le Python de l'environnement virtuel ('$PYTHON_VENV_PATH/bin/python3')"
+    # echo "  pointe vers le Python système ('/usr/bin/python3')."
+    # echo "  Cela indique que votre installation de python3-venv ou la configuration"
+    # echo "  de votre système est défectueuse et ne crée pas d'environnement isolé."
+    # echo "  "
+    # echo "  Veuillez tenter de résoudre ce problème système (par exemple, en"
+    # echo "  réinstallant python3-venv ou en vérifiant votre version de Python)."
+    # echo "  "
+    # echo "  L'installation ne peut pas continuer avec un environnement virtuel non isolé."
+    # echo "##########################################################################"
+    # echo " "
+    # exit 1
+# fi
 
 echo "Mise à jour de pip et wheel dans l'environnement virtuel..."
 sudo "$PYTHON_VENV_PATH/bin/python3" -m pip install --upgrade pip wheel
