@@ -73,6 +73,7 @@ def listen(device_id, api_key, cmd_id):
             cmd = [WHISPER_PATH, "-m", MODEL_PATH, "-f", TEMP_WAVE, "-nt", "-l", "fr"]
             result = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
             text = result.decode('utf-8').strip()
+            print(f"Démon AI Multi-Connect : Texte transcrit : '{text}'") # Add this line
             if text:
                 send_to_jeedom(text, api_key, cmd_id)
         except subprocess.CalledProcessError as e:
