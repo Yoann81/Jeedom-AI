@@ -68,7 +68,7 @@ sudo find "$PLUGIN_DIR" -type f -exec chmod 664 {} \;
 echo "Attribution des droits d'exécution aux scripts..."
 sudo chmod +x "$PLUGIN_DIR/resources/install.sh"
 sudo chmod +x "$PLUGIN_DIR/resources/demond/ai_connector_daemon.py"
-sudo chmod +x "$PLUGIN_DIR/resources/whisper.cpp/main"
+
 sudo chmod +x "$PLUGIN_DIR/resources/whisper.cpp/whisper-cli" # <-- LA LIGNE MANQUANTE
 
 # Création du fichier de log pour éviter les erreurs au premier lancement

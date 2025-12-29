@@ -67,7 +67,7 @@ class ai_connector extends eqLogic {
         touch($log_file);
         chown($log_file, 'www-data');
 
-        $cmd = "nohup python3 " . escapeshellarg($path) . " --apikey " . escapeshellarg($apikey) . " --cmd_id " . escapeshellarg($cmdId) . " --device_id " . escapeshellarg($deviceId);
+        $cmd = "nohup /var/www/html/plugins/ai_connector/resources/python_venv/bin/python3 " . escapeshellarg($path) . " --apikey " . escapeshellarg($apikey) . " --cmd_id " . escapeshellarg($cmdId) . " --device_id " . escapeshellarg($deviceId);
         
         if ($porcupineEnable) {
             if (empty($porcupineAccessKey)) {
