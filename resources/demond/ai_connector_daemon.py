@@ -134,11 +134,15 @@ def listen_wakeword(device_id, api_key, cmd_id, porcupine_access_key, porcupine_
             if not wakeword_list:
                 raise ValueError("Aucun nom de wakeword valide fourni pour Picovoice Porcupine.")
             print(f"Utilisation des wakewords par défaut : {', '.join(wakeword_list)}")
-            porcupine_instance = Porcupine(
-                access_key=porcupine_access_key,
-                keywords=wakeword_list,
-                sensitivities=[0.5] * len(wakeword_list) # Assigner une sensibilité par wakeword
-            )
+            try:
+                porcupine_instance = pvporcupine.create(
+                    access_key=porcupine_access_key,
+                    keywords=wakeword_list,
+                    sensitivities=[0.5] * len(wakeword_list)
+                )
+            except Exception as e:
+                print(f"Erreur lors de la creation de l instance Picovoice : {e}")
+                return
         else:
             raise ValueError("Aucun wakeword spécifié. Veuillez configurer les wakewords par défaut ou un modèle personnalisé si vous n'utilisez pas les mots-clés par défaut.")
 
