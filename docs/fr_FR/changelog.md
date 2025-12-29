@@ -1,5 +1,6 @@
 # Changelog AI Multi-Connect (Stable)
 
-## Version 1.0.0
+## Version 1.0.0 (29/12/2025)
 - Sortie initiale du plugin.
-- Intégration de Google Gemini, OpenAI et Mistral AI.
+- Intégration des moteurs d'IA : Google Gemini, OpenAI et Mistral AI.
+- Commandes de base "Poser une question" et "Dernière réponse".
