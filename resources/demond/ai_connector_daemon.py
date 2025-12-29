@@ -11,8 +11,8 @@ import wave # Import wave module for saving WAV files
 from urllib.parse import quote
 
 # Redirection de stderr vers dev/null au niveau systeme
-devnull = os.open(os.devnull, os.O_WRONLY)
-os.dup2(devnull, 2)
+#devnull = os.open(os.devnull, os.O_WRONLY)
+#os.dup2(devnull, 2)
 
 try:
     import pvporcupine
@@ -90,6 +90,10 @@ def transcribe_and_send(api_key, cmd_id):
         # Capture stdout for transcription, stderr for diagnostics
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         stdout, stderr = process.communicate()
+        
+        if process.returncode != 0:
+            print(f"Erreur fatale whisper (code {process.returncode}) : {stderr}")
+            return False # On sort proprement sans faire planter le python
         
         text = stdout.strip() # Only take stdout for the transcription
 
