@@ -5,7 +5,19 @@ import time
 import sys
 import signal
 import argparse
+import struct
+import pyaudio
+import wave # Import wave module for saving WAV files
 from urllib.parse import quote
+
+try:
+    import porcupine
+    from porcupine import Porcupine
+    PORCUPINE_AVAILABLE = True
+except ImportError:
+    PORCUPINE_AVAILABLE = False
+    print("Avertissement : Picovoice Porcupine n'est pas installé. Le mode Wakeword ne sera pas disponible.")
+
 
 # --- Configuration par défaut ---
 JEEDOM_URL = "http://127.0.0.1/core/api/jeeApi.php"
@@ -13,6 +25,11 @@ WHISPER_PATH = "/var/www/html/plugins/ai_connector/resources/whisper.cpp/whisper
 MODEL_PATH = "/var/www/html/plugins/ai_connector/resources/whisper.cpp/models/ggml-base.bin"
 TEMP_WAVE = "/tmp/ai_voice.wav"
 PID_FILE = '/tmp/jeedom/ai_connector/daemon.pid'
+# --- Porcupine config ---
+PICOVOICE_SAMPLE_RATE = 16000 # Porcupine's required sample rate
+PICOVOICE_FRAME_LENGTH = 512 # Porcupine's required frame length
+PICOVOICE_CHANNELS = 1 # Porcupine's required number of channels
+
 
 def sigterm_handler(signum, frame):
     """Gère le signal d'arrêt de Jeedom."""
@@ -42,9 +59,39 @@ def send_to_jeedom(text, api_key, cmd_id):
     except requests.exceptions.RequestException as e:
         print(f"Erreur d'envoi Jeedom : {e}")
 
-def listen(device_id, api_key, cmd_id):
-    """Boucle principale d'écoute et de transcription."""
-    print(f"Démon AI Multi-Connect démarré sur hw:{device_id},0")
+def transcribe_and_send(api_key, cmd_id):
+    """Transcrit l'audio et envoie le texte à Jeedom."""
+    if not os.path.exists(TEMP_WAVE):
+        print("Erreur : Le fichier audio n'a pas été créé pour la transcription.")
+        return False
+        
+    print("Démon AI Multi-Connect : Transcription audio...")
+    try:
+        cmd = [WHISPER_PATH, "-m", MODEL_PATH, "-f", TEMP_WAVE, "-nt", "-l", "fr"]
+        
+        # Capture stdout for transcription, stderr for diagnostics
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        stdout, stderr = process.communicate()
+        
+        text = stdout.strip() # Only take stdout for the transcription
+
+        # Log any stderr from whisper-cli separately
+        if stderr:
+            print(f"Whisper CLI stderr: {stderr.strip()}")
+
+        print(f"Démon AI Multi-Connect : Texte transcrit : '{text}'")
+        if text:
+            send_to_jeedom(text, api_key, cmd_id)
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"Erreur de transcription Whisper : {e.output.decode('utf-8', errors='ignore')}")
+    except Exception as e:
+        print(f"Erreur technique inattendue lors de la transcription : {e}")
+    return False
+
+def listen_periodic(device_id, api_key, cmd_id):
+    """Boucle principale d'écoute et de transcription périodique."""
+    print(f"Démon AI Multi-Connect démarré en mode périodique sur hw:{device_id},0")
     
     while True:
         if os.path.exists(TEMP_WAVE):
@@ -67,36 +114,97 @@ def listen(device_id, api_key, cmd_id):
             time.sleep(2)
             continue
             
-        # Transcription
-        print("Démon AI Multi-Connect : Transcription audio...")
-        try:
-            cmd = [WHISPER_PATH, "-m", MODEL_PATH, "-f", TEMP_WAVE, "-nt", "-l", "fr"]
-            
-            # Capture stdout for transcription, stderr for diagnostics
-            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-            stdout, stderr = process.communicate()
-            
-            text = stdout.strip() # Only take stdout for the transcription
+        transcribe_and_send(api_key, cmd_id)
+        time.sleep(0.1) # Small delay to prevent 100% CPU usage
 
-            # Log any stderr from whisper-cli separately
-            if stderr:
-                print(f"Whisper CLI stderr: {stderr.strip()}")
 
-            print(f"Démon AI Multi-Connect : Texte transcrit : '{text}'")
-            if text:
-                send_to_jeedom(text, api_key, cmd_id)
-        except subprocess.CalledProcessError as e:
-            print(f"Erreur de transcription Whisper : {e.output.decode('utf-8', errors='ignore')}")
-        except Exception as e:
-            print(f"Erreur technique inattendue : {e}")
-            
-        time.sleep(0.1)
+def listen_wakeword(device_id, api_key, cmd_id, porcupine_access_key):
+    """Boucle d'écoute avec détection de wakeword Porcupine."""
+    if not PORCUPINE_AVAILABLE:
+        print("Erreur : Picovoice Porcupine n'est pas disponible. Le mode Wakeword est désactivé.")
+        return
+
+    porcupine_instance = None
+    pa = None
+    audio_stream = None
+
+    try:
+        # Initialisation de Porcupine
+        # Pour le moment, utilisation d'un wakeword générique 'Hey Jeedom' si possible
+        # Il faudrait idéalement pouvoir configurer cela via Jeedom.
+        keyword_path = porcupine.KEYWORD_PATHS['fr']['hey jeedom'] # Exemple pour 'hey jeedom' en français
+        # Si vous utilisez un modèle de wakeword personnalisé (fichier .ppn) :
+        # keyword_path = "/chemin/vers/votre/wakeword.ppn" 
+
+        porcupine_instance = Porcupine(
+            access_key=porcupine_access_key,
+            keyword_paths=[keyword_path],
+            sensitivities=[0.5] # Sensibilité de 0.0 à 1.0
+        )
+
+        pa = pyaudio.PyAudio()
+        audio_stream = pa.open(
+            rate=porcupine_instance.sample_rate,
+            channels=porcupine_instance.num_channels,
+            format=pyaudio.paInt16,
+            input=True,
+            frames_per_buffer=porcupine_instance.frame_length,
+            input_device_index=int(device_id) # Utiliser l'ID du périphérique directement
+        )
+        print(f"Démon AI Multi-Connect démarré en mode Wakeword sur hw:{device_id},0. En attente de '{os.path.basename(keyword_path)}'...")
+
+        # Buffer pour enregistrer la commande après le wakeword
+        command_audio_buffer = []
+        is_recording_command = False
+        # Let's simplify: record for a fixed time after wakeword
+        RECORD_COMMAND_FRAMES = porcupine_instance.sample_rate // porcupine_instance.frame_length * 3 # Record for 3 seconds after wakeword
+
+        while True:
+            pcm = audio_stream.read(porcupine_instance.frame_length, exception_on_overflow=False)
+            pcm_data = struct.unpack_from("h" * porcupine_instance.frame_length, pcm)
+
+            if is_recording_command:
+                command_audio_buffer.append(pcm_data)
+                if len(command_audio_buffer) >= RECORD_COMMAND_FRAMES:
+                    print("Démon AI Multi-Connect : Fin d'enregistrement de la commande.")
+                    is_recording_command = False
+                    
+                    # Sauvegarder la commande dans TEMP_WAVE
+                    wave_file_path = TEMP_WAVE
+                    wf = wave.open(wave_file_path, 'wb')
+                    wf.setnchannels(PICOVOICE_CHANNELS)
+                    wf.setsampwidth(pa.get_sample_size(pyaudio.paInt16))
+                    wf.setframerate(PICOVOICE_SAMPLE_RATE)
+                    wf.writeframes(b''.join(struct.pack('h' * len(frame), *frame) for frame in command_audio_buffer))
+                    wf.close()
+                    
+                    command_audio_buffer = [] # Clear buffer
+                    transcribe_and_send(api_key, cmd_id)
+            else:
+                keyword_index = porcupine_instance.process(pcm_data)
+                if keyword_index >= 0:
+                    print(f"Démon AI Multi-Connect : Wakeword détecté ('{os.path.basename(porcupine_instance.keyword_paths[keyword_index])}') !")
+                    is_recording_command = True
+                    command_audio_buffer = [] # Start fresh recording after wakeword
+                    print("Démon AI Multi-Connect : Début d'enregistrement de la commande vocale...")
+
+    except Exception as e:
+        print(f"Erreur dans la boucle Wakeword : {e}", file=sys.stderr)
+    finally:
+        if porcupine_instance is not None:
+            porcupine_instance.delete()
+        if audio_stream is not None:
+            audio_stream.close()
+        if pa is not None:
+            pa.terminate()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Démon AI Connector pour Jeedom.")
     parser.add_argument("--apikey", required=True, help="Clé API Jeedom Core.")
     parser.add_argument("--cmd_id", required=True, help="ID de la commande Jeedom pour envoyer le texte.")
     parser.add_argument("--device_id", default="1", help="ID du périphérique d'enregistrement audio (par défaut: 1).")
+    parser.add_argument("--porcupine_enable", type=int, default=0, help="Activer la détection de wakeword Picovoice.")
+    parser.add_argument("--porcupine_access_key", default="", help="Clé d'accès Picovoice pour le wakeword.")
     args = parser.parse_args()
 
     # --- Boilerplate de démon Jeedom ---
@@ -112,7 +220,19 @@ if __name__ == "__main__":
     # --- Fin du Boilerplate ---
 
     try:
-        listen(args.device_id, args.apikey, args.cmd_id)
+        if args.porcupine_enable:
+            print("Démon AI Multi-Connect : Mode Wakeword Picovoice activé.")
+            if not PORCUPINE_AVAILABLE:
+                print("Erreur : Picovoice Porcupine n'est pas disponible. Veuillez l'installer. Rebasculement en mode périodique.", file=sys.stderr)
+                listen_periodic(args.device_id, args.apikey, args.cmd_id)
+            elif not args.porcupine_access_key:
+                print("Erreur : Clé d'accès Picovoice manquante. Rebasculement en mode périodique.", file=sys.stderr)
+                listen_periodic(args.device_id, args.apikey, args.cmd_id)
+            else:
+                listen_wakeword(args.device_id, args.apikey, args.cmd_id, args.porcupine_access_key)
+        else:
+            print("Démon AI Multi-Connect : Mode d'écoute périodique activé (sans wakeword).")
+            listen_periodic(args.device_id, args.apikey, args.cmd_id)
     except Exception as e:
         print(f"Erreur majeure dans la boucle principale : {e}", file=sys.stderr)
     finally:
