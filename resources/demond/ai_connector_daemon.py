@@ -54,6 +54,7 @@ def listen(device_id, api_key, cmd_id):
                 print(f"Impossible de supprimer le fichier WAVE temporaire : {e}")
 
         # Enregistrement audio
+        print("Démon AI Multi-Connect : Enregistrement audio...")
         record_cmd = f"arecord -D hw:{device_id},0 -d 4 -f S16_LE -c1 -r 16000 -t wav {TEMP_WAVE}"
         proc = subprocess.run(record_cmd, shell=True, capture_output=True, text=True)
         if proc.returncode != 0:
@@ -67,6 +68,7 @@ def listen(device_id, api_key, cmd_id):
             continue
             
         # Transcription
+        print("Démon AI Multi-Connect : Transcription audio...")
         try:
             cmd = [WHISPER_PATH, "-m", MODEL_PATH, "-f", TEMP_WAVE, "-nt", "-l", "fr"]
             result = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
