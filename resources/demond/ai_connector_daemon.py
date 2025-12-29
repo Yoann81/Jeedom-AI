@@ -205,7 +205,7 @@ if __name__ == "__main__":
     parser.add_argument("--device_id", default="1", help="ID du périphérique d'enregistrement audio (par défaut: 1).")
     parser.add_argument("--porcupine_enable", type=int, default=0, help="Activer la détection de wakeword Picovoice.")
     parser.add_argument("--porcupine_access_key", default="", help="Clé d'accès Picovoice pour le wakeword.")
-    parser.add_argument("--porcupine_wakeword_names", default="", help="Liste des noms de wakewords Picovoice par défaut (séparés par des virgules).")
+    parser.add_argument("--porcupine_wakeword_names", default="picovoice", help="Liste des noms de wakewords Picovoice par défaut (séparés par des virgules).")
     args = parser.parse_args()
 
     # --- Boilerplate de démon Jeedom ---
