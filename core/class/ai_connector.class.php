@@ -8,28 +8,34 @@ class ai_connector extends eqLogic {
     public static function deamon_info() {
         $return = array();
         $return['log'] = __CLASS__;
-        $return['state'] = 'nok';
         $return['launchable'] = 'ok';
 
-        // Vérification du processus Python
         $pids = exec("pgrep -f ai_connector_daemon.py");
-        if (!empty($pids)) {
-            $return['state'] = 'ok';
+        $cron_running = false;
+        $cron = cron::byClassAndFunction(__CLASS__, 'daemon_loop');
+        if (is_object($cron) && $cron->running()) {
+            $cron_running = true;
         }
 
-        // Vérification du cron
-        $cron = cron::byClassAndFunction(__CLASS__, 'daemon_loop');
-        if (!is_object($cron) || !$cron->running()) {
-            // Si le cron n'est pas actif mais que le process tourne, on a un souci
-            // Mais pour l'UI, on va se baser sur le fait que le process est là.
+        // Si le cron tourne et que le pid est trouvé, tout est ok.
+        if (!empty($pids) && $cron_running) {
+            $return['state'] = 'ok';
+        } 
+        // Si le cron tourne mais pas le pid, le démarrage est en cours (ou a échoué).
+        else if (empty($pids) && $cron_running) {
+            $return['state'] = 'starting';
+        } 
+        // Si ni l'un ni l'autre ne tourne, c'est nok.
+        else {
+            $return['state'] = 'nok';
         }
         
         return $return;
     }
 
     public static function deamon_start() {
-        self::deamon_stop(); // Assure un arrêt propre avant de (re)lancer
-        log::add('ai_connector', 'info', 'Démarrage du service du démon');
+        self::deamon_stop(); 
+        log::add('ai_connector', 'info', 'Activation de la surveillance du démon (toutes les minutes)');
 
         $cron = cron::byClassAndFunction(__CLASS__, 'daemon_loop');
         if (!is_object($cron)) {
@@ -39,42 +45,38 @@ class ai_connector extends eqLogic {
             $cron->setEnable(1);
             $cron->setDeamon(1);
             $cron->setSchedule('* * * * *');
-            $cron->setTimeout('1'); // Timeout court, la tâche ne fait que vérifier/lancer
+            $cron->setTimeout('1');
             $cron->save();
         }
-        
-        // On lance une première fois manuellement pour ne pas attendre la minute suivante
-        self::daemon_loop();
-        log::add('ai_connector', 'info', 'Service du démon démarré et boucle de surveillance activée.');
+        // Le cron s'occupera du reste. Pas de lancement manuel.
     }
 
     public static function deamon_stop() {
-        log::add('ai_connector', 'info', 'Arrêt du service du démon');
+        log::add('ai_connector', 'info', 'Désactivation de la surveillance du démon et arrêt du processus');
 
-        // Suppression du cron de surveillance
         $cron = cron::byClassAndFunction(__CLASS__, 'daemon_loop');
         if (is_object($cron)) {
-            $cron->stop();
             $cron->remove();
         }
 
-        // Arrêt du processus python
         exec("pkill -f ai_connector_daemon.py");
-        log::add('ai_connector', 'info', 'Processus du démon Python arrêté.');
+        log::add('ai_connector', 'debug', 'Commande pkill exécutée.');
     }
 
     public static function daemon_loop() {
+        log::add('ai_connector', 'debug', 'Exécution de daemon_loop.');
+        
         $pids = exec("pgrep -f ai_connector_daemon.py");
         if (!empty($pids)) {
-            //log::add('ai_connector', 'debug', 'Le démon Python est déjà en cours d\'exécution. Rien à faire.');
+            //log::add('ai_connector', 'debug', 'Le démon Python est déjà en cours d\'exécution.');
             return;
         }
 
-        log::add('ai_connector', 'info', 'Le démon Python n\'est pas en cours d\'exécution, tentative de lancement.');
+        log::add('ai_connector', 'info', 'Démon Python non détecté, tentative de lancement.');
 
         $eqLogics = eqLogic::byType('ai_connector', true);
         if (empty($eqLogics)) {
-            log::add('ai_connector', 'warning', "Aucun équipement 'AI Connector' activé n'a été trouvé. Le démon ne démarrera pas.");
+            log::add('ai_connector', 'warning', "Aucun équipement 'AI Connector' activé trouvé. Le démon ne démarrera pas.");
             return;
         }
         $config_source = $eqLogics[0];
@@ -84,20 +86,20 @@ class ai_connector extends eqLogic {
         $deviceId = $config_source->getConfiguration('voice_device_id', '1');
         
         if (empty($cmdId)) {
-            log::add('ai_connector', 'error', 'ID de commande de retour (HP) non configuré sur l\'équipement ' . $config_source->getHumanName(true) . '. Le démon ne peut pas démarrer.');
+            log::add('ai_connector', 'error', 'ID de commande de retour (HP) non configuré. Le démon ne peut pas démarrer.');
             return;
         }
 
         $path = realpath(dirname(__FILE__) . '/../../resources/demond/ai_connector_daemon.py');
         if (!file_exists($path)) {
-            log::add('ai_connector', 'error', 'Script Python introuvable à ' . $path);
+            log::add('ai_connector', 'error', 'Script Python introuvable : ' . $path);
             return;
         }
 
         $log_file = log::getPathName('ai_connector_daemon');
         $cmd = "python3 " . escapeshellarg($path) . " --apikey " . escapeshellarg($apikey) . " --cmd_id " . escapeshellarg($cmdId) . " --device_id " . escapeshellarg($deviceId) . " >> " . $log_file . " 2>&1 &";
         
-        log::add('ai_connector', 'debug', "Commande de lancement du démon : " . $cmd);
+        log::add('ai_connector', 'debug', "Commande de lancement : " . $cmd);
         
         exec($cmd);
     }
