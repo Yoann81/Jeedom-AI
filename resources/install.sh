@@ -40,10 +40,46 @@ echo "Modèle téléchargé."
 
 # 5. Installation des dépendances Python pour le Wakeword (Picovoice Porcupine)
 echo "Installation des dépendances Python pour le Wakeword..."
+PYTHON_VENV_PATH="/var/www/html/plugins/ai_connector/resources/python_venv"
+
+if [ -d "$PYTHON_VENV_PATH" ]; then
+    echo "Nettoyage de l'ancien environnement virtuel Python..."
+    sudo rm -rf "$PYTHON_VENV_PATH"
+fi
+
 sudo apt-get update
 sudo apt-get install -y portaudio19-dev
-sudo /var/www/html/plugins/ai_connector/resources/python_venv/bin/python3 -m pip install pvporcupine
-sudo /var/www/html/plugins/ai_connector/resources/python_venv/bin/python3 -m pip install PyAudio
+sudo python3 -m venv --upgrade-deps "$PYTHON_VENV_PATH"
+
+# Vérification critique de l'environnement virtuel
+if [ -L "$PYTHON_VENV_PATH/bin/python3" ] && [ "$(readlink -f "$PYTHON_VENV_PATH/bin/python3")" == "$(readlink -f "/usr/bin/python3")" ]; then
+    echo " "
+    echo "##########################################################################"
+    echo "  ERREUR CRITIQUE : Environnement Virtuel Invalide"
+    echo "##########################################################################"
+    echo "  Le Python de l'environnement virtuel ('$PYTHON_VENV_PATH/bin/python3')"
+    echo "  pointe vers le Python système ('/usr/bin/python3')."
+    echo "  Cela indique que votre installation de python3-venv ou la configuration"
+    echo "  de votre système est défectueuse et ne crée pas d'environnement isolé."
+    echo "  "
+    echo "  Veuillez tenter de résoudre ce problème système (par exemple, en"
+    echo "  réinstallant python3-venv ou en vérifiant votre version de Python)."
+    echo "  "
+    echo "  L'installation ne peut pas continuer avec un environnement virtuel non isolé."
+    echo "##########################################################################"
+    echo " "
+    exit 1
+fi
+
+echo "Mise à jour de pip et wheel dans l'environnement virtuel..."
+sudo "$PYTHON_VENV_PATH/bin/python3" -m pip install --upgrade pip wheel
+
+echo "Installation des modules Python requis..."
+sudo "$PYTHON_VENV_PATH/bin/python3" -m pip install --force-reinstall --upgrade requests
+sudo "$PYTHON_VENV_PATH/bin/python3" -m pip install --force-reinstall --upgrade numpy
+sudo "$PYTHON_VENV_PATH/bin/python3" -m pip install --force-reinstall --upgrade pyserial
+sudo "$PYTHON_VENV_PATH/bin/python3" -m pip install pvporcupine
+sudo "$PYTHON_VENV_PATH/bin/python3" -m pip install PyAudio
 echo "Dépendances Python installées."
 
 # 6. Gestion des droits
