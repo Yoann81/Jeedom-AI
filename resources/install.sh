@@ -16,24 +16,24 @@ echo "--- Début de l'installation des dépendances de AI Connector ---"
     # rm -rf whisper.cpp
 # fi
 
-2. Clonage du dépôt
+#2. Clonage du dépôt
 # echo "Clonage de Whisper.cpp depuis Github..."
 # git clone https://github.com/ggerganov/whisper.cpp.git
 # echo "Clonage terminé."
 
 # cd whisper.cpp
 
-3. Compilation optimisée pour Raspberry Pi
+#3. Compilation optimisée pour Raspberry Pi
 # echo "Compilation de Whisper.cpp (cela peut prendre plusieurs minutes)..."
 # make -j4
 # echo "Compilation terminée."
 
-Déplacer l'exécutable principal au bon endroit et le renommer si nécessaire
+#Déplacer l'exécutable principal au bon endroit et le renommer si nécessaire
 # echo "Déplacement de l'exécutable 'whisper-cli'..."
 # mv ./build/bin/main whisper-cli
 # echo "Exécutable placé."
 
-4. Téléchargement du modèle de langue
+#4. Téléchargement du modèle de langue
 # echo "Téléchargement du modèle de langue 'base'..."
 # bash ./models/download-ggml-model.sh base
 # echo "Modèle téléchargé."
