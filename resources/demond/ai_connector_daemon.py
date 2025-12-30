@@ -50,23 +50,48 @@ PICOVOICE_CHANNELS = 1 # Porcupine's required number of channels
 
 def play_notification_sound():
     sound_path = "/var/www/html/plugins/ai_connector/resources/notification.wav"
+    if not os.path.exists(sound_path):
+        return
+
     try:
+        import wave
         wf = wave.open(sound_path, 'rb')
         p = pyaudio.PyAudio()
-        stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
-                        channels=wf.getnchannels(),
-                        rate=wf.getframerate(),
-                        output=True,
-                        output_device_index=2) # On force l'index 2 (Jack)
+        
+        # --- RECHERCHE DYNAMIQUE DE LA CARTE ---
+        device_index = None
+        for i in range(p.get_device_count()):
+            dev = p.get_device_info_by_index(i)
+            # On cherche Headphones (Jack) ou bcm2835
+            if "Headphones" in dev['name'] or "bcm2835" in dev['name']:
+                # On vérifie si ce périphérique accepte au moins 1 canal de sortie
+                if dev['maxOutputChannels'] > 0:
+                    device_index = i
+                    break
+
+        # Si non trouvé, on prend le périphérique par défaut
+        if device_index is None:
+            device_index = p.get_default_output_device_info()['index']
+
+        stream = p.open(
+            format=p.get_format_from_width(wf.getsampwidth()),
+            channels=wf.getnchannels(),
+            rate=wf.getframerate(),
+            output=True,
+            output_device_index=device_index
+        )
+        
         data = wf.readframes(1024)
         while data:
             stream.write(data)
             data = wf.readframes(1024)
+            
         stream.stop_stream()
         stream.close()
         p.terminate()
     except Exception as e:
-        pass # On ne veut pas bloquer le démon si le son échoue
+        # On log l'erreur proprement pour Jeedom sans faire planter le démon
+        log(f"Erreur Audio : {str(e)}")
         
 def sigterm_handler(signum, frame):
     """Gère le signal d'arrêt de Jeedom."""
