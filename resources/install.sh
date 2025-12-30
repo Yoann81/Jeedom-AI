@@ -37,10 +37,9 @@ sudo apt-get install -y python3-pyaudio libasound2-dev
 # make -j4
 # echo "Compilation terminée."
 
-#Déplacer l'exécutable principal au bon endroit et le renommer si nécessaire
-# echo "Déplacement de l'exécutable 'whisper-cli'..."
-# mv ./build/bin/main whisper-cli
-# echo "Exécutable placé."
+# echo "Organisation des binaires..."
+# sudo cp build/bin/whisper-cli .
+# sudo cp build/bin/main .
 
 #4. Téléchargement du modèle de langue
 # echo "Téléchargement du modèle de langue 'base'..."
@@ -140,6 +139,8 @@ sudo find "$PLUGIN_DIR" -type f -exec chmod 664 {} \;
 echo "Attribution des droits d'exécution aux scripts..."
 sudo chmod +x "$PLUGIN_DIR/resources/install.sh"
 sudo chmod +x "$PLUGIN_DIR/resources/demond/ai_connector_daemon.py"
+sudo chmod +x "$PLUGIN_DIR/resources/whisper.cpp/whisper-cli"
+sudo chmod +x "$PLUGIN_DIR/resources/whisper.cpp/main"
 
 sudo chmod +x "$PLUGIN_DIR/resources/whisper.cpp/whisper-cli" # <-- LA LIGNE MANQUANTE
 
