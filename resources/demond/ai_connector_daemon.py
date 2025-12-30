@@ -48,7 +48,30 @@ PICOVOICE_SAMPLE_RATE = 16000 # Porcupine's required sample rate
 PICOVOICE_FRAME_LENGTH = 512 # Porcupine's required frame length
 PICOVOICE_CHANNELS = 1 # Porcupine's required number of channels
 
+def play_notification_sound():
+    """Joue un petit son de notification."""
+    # Tu peux mettre un petit fichier wav ici
+    sound_path = "/var/www/html/plugins/ai_connector/resources/notification.wav"
+    if not os.path.exists(sound_path):
+        return
 
+    try:
+        wf = wave.open(sound_path, 'rb')
+        p = pyaudio.PyAudio()
+        stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
+                        channels=wf.getnchannels(),
+                        rate=wf.getframerate(),
+                        output=True)
+        data = wf.readframes(1024)
+        while data:
+            stream.write(data)
+            data = wf.readframes(1024)
+        stream.stop_stream()
+        stream.close()
+        p.terminate()
+    except Exception as e:
+        print(f"Erreur lors de la lecture du son : {e}")
+        
 def sigterm_handler(signum, frame):
     """Gère le signal d'arrêt de Jeedom."""
     print("Signal d'arrêt reçu. Nettoyage...")
@@ -218,6 +241,7 @@ def listen_wakeword(device_id, api_key, cmd_id, porcupine_access_key, porcupine_
                 keyword_index = porcupine_instance.process(pcm_data)
                 if keyword_index >= 0:
                     print(f"Démon AI Multi-Connect : Wakeword détecté !!!")
+                    play_notification_sound()
                     is_recording_command = True
                     command_audio_buffer = [] # Start fresh recording after wakeword
                     print("Démon AI Multi-Connect : Début d'enregistrement de la commande vocale...")
