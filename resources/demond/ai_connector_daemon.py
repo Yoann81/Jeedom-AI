@@ -28,9 +28,13 @@ import sys
 from ctypes import *
 
 def log(message, level="INFO"):
+    # On récupère la date
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    log(f"[{now}][{level}] {message}")
-    # Cette ligne est la clé : elle force l'écriture immédiate
+    
+    # ATTENTION : Utilise bien PRINT ici, pas LOG !
+    print(f"[{now}][{level}] {message}")
+    
+    # On force l'écriture
     sys.stdout.flush()
 
 # On definit un gestionnaire d erreur vide pour ALSA
