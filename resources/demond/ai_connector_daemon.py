@@ -58,7 +58,7 @@ PID_FILE = '/tmp/jeedom/ai_connector/daemon.pid'
 # --- Porcupine config ---
 PICOVOICE_SAMPLE_RATE = 16000 # Porcupine's required sample rate
 PICOVOICE_FRAME_LENGTH = 512 # Porcupine's required frame length
-PICOVOICE_CHANNELS = 1 # Porcupine's required number of channels
+PICOVOICE_CHANNELS = 2 # Porcupine's required number of channels
 
 def play_notification_sound():
     sound_path = "/var/www/html/plugins/ai_connector/resources/notification.wav"
