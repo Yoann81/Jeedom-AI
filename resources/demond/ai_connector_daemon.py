@@ -49,19 +49,15 @@ PICOVOICE_FRAME_LENGTH = 512 # Porcupine's required frame length
 PICOVOICE_CHANNELS = 1 # Porcupine's required number of channels
 
 def play_notification_sound():
-    """Joue un petit son de notification."""
-    # Tu peux mettre un petit fichier wav ici
     sound_path = "/var/www/html/plugins/ai_connector/resources/notification.wav"
-    if not os.path.exists(sound_path):
-        return
-
     try:
         wf = wave.open(sound_path, 'rb')
         p = pyaudio.PyAudio()
         stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
                         channels=wf.getnchannels(),
                         rate=wf.getframerate(),
-                        output=True)
+                        output=True,
+                        output_device_index=2) # On force l'index 2 (Jack)
         data = wf.readframes(1024)
         while data:
             stream.write(data)
@@ -70,7 +66,7 @@ def play_notification_sound():
         stream.close()
         p.terminate()
     except Exception as e:
-        print(f"Erreur lors de la lecture du son : {e}")
+        pass # On ne veut pas bloquer le démon si le son échoue
         
 def sigterm_handler(signum, frame):
     """Gère le signal d'arrêt de Jeedom."""

@@ -55,6 +55,21 @@ sudo python3 -m venv --upgrade-deps "$PYTHON_VENV_PATH"
 sudo "$PYTHON_VENV_PATH/bin/python3" -m pip install --upgrade pip wheel
 sudo "$PYTHON_VENV_PATH/bin/python3" -m pip install requests numpy pyserial pvporcupine PyAudio
 
+echo "Génération du son de notification..."
+# Vérification/Installation de ffmpeg si nécessaire
+if ! command -v ffmpeg &> /dev/null; then
+    sudo apt-get install -y ffmpeg
+fi
+
+# Génération du fichier WAV (16-bit, 44100Hz, Mono)
+# On utilise une fréquence de 1000Hz pour un bip clair
+sudo ffmpeg -f lavfi -i "sine=frequency=1000:duration=0.3" /var/www/html/plugins/ai_connector/resources/notification.wav -y
+
+# Application des permissions
+sudo chown www-data:www-data /var/www/html/plugins/ai_connector/resources/notification.wav
+sudo chmod 664 /var/www/html/plugins/ai_connector/resources/notification.wav
+echo "Son de notification généré avec succès."
+
 # 6. Gestion des droits et permissions
 echo "Configuration des permissions..."
 sudo usermod -aG audio www-data
