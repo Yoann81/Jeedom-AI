@@ -195,7 +195,8 @@ def listen_wakeword(device_id, api_key, cmd_id, porcupine_access_key, porcupine_
         while True:
             pcm = audio_stream.read(porcupine_instance.frame_length, exception_on_overflow=False)
             pcm_data = struct.unpack_from("h" * porcupine_instance.frame_length, pcm)
-            print("Audio détecté...")
+            if max(pcm_data) > 600:
+                print("Audio détecté...")
             if is_recording_command:
                 command_audio_buffer.append(pcm_data)
                 if len(command_audio_buffer) >= RECORD_COMMAND_FRAMES:
