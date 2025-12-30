@@ -161,7 +161,7 @@ def listen_wakeword(device_id, api_key, cmd_id, porcupine_access_key, porcupine_
                 porcupine_instance = pvporcupine.create(
                     access_key=porcupine_access_key,
                     keywords=wakeword_list,
-                    sensitivities=[0.5] * len(wakeword_list)
+                    sensitivities=[0.8] * len(wakeword_list)
                 )
             except Exception as e:
                 print(f"Erreur lors de la creation de l instance Picovoice : {e}")
@@ -195,7 +195,7 @@ def listen_wakeword(device_id, api_key, cmd_id, porcupine_access_key, porcupine_
         while True:
             pcm = audio_stream.read(porcupine_instance.frame_length, exception_on_overflow=False)
             pcm_data = struct.unpack_from("h" * porcupine_instance.frame_length, pcm)
-
+            print("Audio détecté...")
             if is_recording_command:
                 command_audio_buffer.append(pcm_data)
                 if len(command_audio_buffer) >= RECORD_COMMAND_FRAMES:
