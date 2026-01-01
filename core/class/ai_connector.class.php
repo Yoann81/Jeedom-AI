@@ -248,17 +248,21 @@ class ai_connector extends eqLogic {
         return $response['choices'][0]['message']['content'] ?? "Erreur Mistral";
     }
 
-    private function sendCurl($url, $data, $headers = ['Content-Type: application/json']) {
-        $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-        $rawResponse = curl_exec($ch);
-        log::add('ai_connector', 'debug', 'Raw AI API response: ' . $rawResponse); // Add this line for logging
-        curl_close($ch);
-        return json_decode($rawResponse, true);
+    private function findAudioDevice() {
+        // Recherche dynamique du périphérique audio comme dans le démon Python
+        $defaultDevice = 'hw:0,0';
+        $aplayOutput = shell_exec('aplay -l 2>/dev/null');
+        if ($aplayOutput) {
+            $lines = explode("\n", $aplayOutput);
+            foreach ($lines as $line) {
+                // Recherche de Headphones ou bcm2835
+                if (preg_match('/card (\d+):.*?(Headphones|bcm2835).*?, device (\d+):/', $line, $matches)) {
+                    return 'hw:' . $matches[1] . ',' . $matches[3];
+                }
+            }
+        }
+        // Si non trouvé, utiliser le périphérique par défaut
+        return $defaultDevice;
     }
 
     private function speakWithGoogleTTS($text, $apiKey, $language, $voice, $audioDevice = 'hw:0,0') {
@@ -268,6 +272,10 @@ class ai_connector extends eqLogic {
                 log::add('ai_connector', 'warning', 'TTS: Clé API ou texte vide');
                 return;
             }
+
+            // Recherche dynamique du périphérique audio comme pour la notification
+            $audioDevice = $this->findAudioDevice();
+            log::add('ai_connector', 'debug', 'TTS: Périphérique audio détecté: ' . $audioDevice);
 
         // Tronquer le texte à 4000 caractères pour respecter la limite Google TTS
         $text = substr($text, 0, 4000);
