@@ -144,8 +144,8 @@ def transcribe_and_send(api_key, cmd_id, stt_engine="whisper", google_api_key=""
     try:
         if stt_engine == "google" and google_api_key:
             # Use Google STT
-            with open(TEMP_WAVE, "rb") as audio_file:
-                audio_content = audio_file.read()
+            with wave.open(TEMP_WAVE, "rb") as wf:
+                audio_content = wf.readframes(wf.getnframes())
             audio_base64 = base64.b64encode(audio_content).decode('utf-8')
             
             url = f"https://speech.googleapis.com/v1/speech:recognize?key={google_api_key}"
