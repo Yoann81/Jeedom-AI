@@ -1,87 +1,458 @@
-# Documentation AI Multi-Connect
+# Documentation AI Connector v2.0.0
 
-## 1. Description
+## 📋 Table des matières
+1. [Vue d'ensemble](#vue-densemble)
+2. [Installation](#installation)
+3. [Configuration](#configuration)
+4. [Utilisation](#utilisation)
+5. [Fonctionnalités avancées](#fonctionnalités-avancées)
+6. [Dépannage](#dépannage)
 
-Le plugin **AI Multi-Connect** centralise vos accès aux IA pour faciliter leur utilisation dans vos scénarios domotiques et introduit des fonctionnalités avancées d'assistant vocal.
+---
 
-### Moteurs disponibles :
-- **Google Gemini** : Rapide et efficace (idéal pour le Raspberry Pi).
-- **OpenAI (ChatGPT)** : Le standard du marché.
-- **Mistral AI** : L'alternative française haute performance.
-- *Azure et Vertex AI sont prévus dans les prochaines mises à jour.*
+## Vue d'ensemble
 
-## 2. Configuration du plugin
+### Qu'est-ce que AI Connector ?
 
-Après installation du plugin, il vous suffit de l'activer. Aucune configuration globale n'est nécessaire ; tout se gère au niveau de chaque équipement.
+AI Connector est un plugin Jeedom multimodal qui intègre les principaux moteurs d'Intelligence Artificielle du marché :
 
-## 3. Configuration des équipements
+- **Google Gemini** (3-flash-preview) - API gratuite, réponses rapides
+- **OpenAI ChatGPT** (gpt-4o-mini, gpt-4) - Modèles puissants
+- **Mistral AI** (tiny, small, medium) - Alternative opensource performante
 
-Rendez-vous dans le menu **Plugins > Communication > AI Multi-Connect**.
+### Fonctionnalités
 
-### Paramètres de l'équipement :
-- **Nom de l'équipement** : Identifiant de votre IA (ex: "Gemini Assistant").
-- **Objet parent** : Objet Jeedom auquel l'IA sera rattachée.
-- **Catégorie** : Communication.
-- **Activer / Visible** : Cocher pour utiliser l'équipement.
+#### Moteurs de texte
+- ✅ Intégration multiples IA dans un seul plugin
+- ✅ Créez autant d'équipements que d'IA
+- ✅ Réponses exploitables dans scénarios
+- ✅ Gestion d'erreurs complète et logs détaillés
 
-### Paramètres spécifiques aux moteurs d'IA :
-- **Moteur d'IA** : Choisissez le fournisseur (Gemini, OpenAI, Mistral).
-- **Clé API** : Collez ici la clé secrète fournie par le site de l'IA choisie.
+#### Reconnaissance vocale (STT)
+- ✅ Google Cloud Speech-to-Text (cloud)
+- ✅ Whisper (local, hors-ligne)
+- ✅ Enregistrement automatique via démon Python
+- ✅ Support multilingue (en-US, fr-FR, etc)
 
-### Fonctionnalités vocales (Assistant vocal) :
-Le plugin intègre un démon Python (`ai_connector_daemon.py`) pour l'écoute vocale en continu et la détection de mot-clé (wakeword). Cette fonctionnalité transforme votre installation Jeedom en un assistant vocal local.
+#### Synthèse vocale (TTS)
+- ✅ Google Cloud Text-to-Speech
+- ✅ 60+ voix neurales
+- ✅ Lecture automatique de réponses IA
+- ✅ Détection dynamique du périphérique audio
 
-- **Activer l'écoute vocale (`voice_enable`)** : Cochez cette option sur l'équipement de votre choix pour activer le mode "écoute" pour cet équipement. **Attention : un seul équipement doit avoir l'écoute vocale activée à la fois.** Si plusieurs équipements sont configurés, seul le premier sera pris en compte par le démon.
-- **ID de la commande de retour (HP) (`voice_cmd_id`)** : C'est l'ID de la commande Jeedom qui sera utilisée pour la synthèse vocale ou le retour d'information de l'IA. Par exemple, l'ID d'une commande "Parler" de votre module de synthèse vocale.
-- **ID de l'appareil audio (`voice_device_id`)** : L'identifiant de votre microphone/périphérique d'entrée audio. Par défaut, "1" est souvent le microphone USB. Vous pouvez le trouver en exécutant `arecord -L` sur votre système.
+#### Détection de wakeword
+- ✅ Picovoice Porcupine (détection locale, sans cloud)
+- ✅ Sensibilité configurable (0.0 - 1.0)
+- ✅ Support multiples wakewords
+- ✅ Peu de faux positifs
 
-### Détection de mot-clé (Wakeword Porcupine) :
-Le plugin utilise Picovoice Porcupine pour la détection de mot-clé, permettant à votre assistant de ne réagir que lorsque le mot-clé est prononcé.
+#### Protection anti-boucle
+- ✅ Cache intelligent
+- ✅ Timeouts différenciés (30s manual, 10s STT)
+- ✅ Évite les appels API inutiles
 
-- **Activer le Wakeword (`porcupine_enable`)** : Cochez cette option pour activer la détection de mot-clé.
-- **Clé d'accès Picovoice (`porcupine_access_key`)** : Nécessite une clé d'accès fournie gratuitement par Picovoice (pvporcupine). Rendez-vous sur [Picovoice Console](https://console.picovoice.ai/) pour obtenir votre clé. Sans cette clé, la détection de mot-clé ne fonctionnera pas, même si activée.
+---
 
-## 4. Les Commandes
+## Installation
 
-Dès la sauvegarde, deux commandes sont créées :
+### Prérequis système
 
-- **Poser une question** (Action/Message) : C'est la commande que vous utilisez pour envoyer votre texte à l'IA ou pour envoyer une requête après un mot-clé détecté.
-- **Dernière réponse** (Info/Autre) : Contient le texte brut renvoyé par l'IA.
+- **Jeedom** : v4.3 ou plus récent
+- **OS** : Debian/Raspbian moderne (Bullseye+)
+- **Python** : 3.8 ou plus
+- **Espace disque** : 200MB minimum
+- **Son** : Microphone + Haut-parleur (optionnel)
 
-## 5. Exemples d'utilisation
+### Procédure d'installation
 
-### Scénario : Alerte de sécurité intelligente
-Si une présence est détectée et que l'alarme est mise :
-- **Action** : `[Salon][Gemini][Poser une question]`
-- **Message** : "Une présence a été détectée dans le jardin à 3h du matin. Rédige un message d'alerte court et urgent pour mon propriétaire."
-- **Action** : `[Telegram][Moi][Envoi]` avec le contenu `#[Salon][Gemini][Dernière réponse]#`.
+#### Étape 1 : Téléchargement et activation
 
-### Scénario : Conseil météo vocal
-- L'équipement "Assistant Salon" a l'écoute vocale et le wakeword activés.
-- Lorsque le mot-clé est prononcé, l'IA écoute la suite de la requête.
-- **Requête vocale** : "Quelle est la météo de demain ?"
-- Le démon envoie la requête à l'IA configurée dans l'équipement.
-- La **Dernière réponse** de l'IA est récupérée.
-- **Action** : `[Cuisine][Enceinte][Dire]` avec le contenu `#[Assistant Salon][Dernière réponse]#`.
+1. **Jeedom** > **Plugins** > **Gestion des plugins**
+2. **+ Ajouter** > Rechercher "AI Connector"
+3. **Installer** et **Activer**
 
-## 6. FAQ
+#### Étape 2 : Installation des dépendances
 
-**Est-ce que le plugin est payant ?**
-Le plugin lui-même dépend de sa licence sur le Market, mais l'utilisation des IA peut engendrer des coûts selon les quotas gratuits des fournisseurs (ex: Gemini possède un niveau gratuit généreux). La clé d'accès Picovoice est généralement gratuite pour un usage personnel.
+```bash
+sudo bash /var/www/html/plugins/ai_connector/resources/install.sh
+```
 
-**Le plugin est-il lent ?**
-Le temps de réponse de l'IA dépend de la vitesse de l'API distante et de la complexité de votre question. Pour les requêtes vocales, il faut ajouter le temps de détection du mot-clé et de transcription de la parole.
+Cela installe :
+- Librairies audio (alsa-utils, portaudio, mpg123)
+- Python venv et dépendances (pvporcupine, requests, pyaudio)
+- Modèle Whisper (tiny, 140MB)
+- Fichier son de notification
 
-## 7. Troubleshooting
+**Durée** : 5-10 minutes (selon vitesse internet et CPU)
 
-- **"ModuleNotFoundError: No module named 'pyaudio'" ou problèmes d'écoute vocale** :
-    - Assurez-vous d'avoir bien exécuté le script `install.sh` après les dernières mises à jour.
-    - Vérifiez que les dépendances système nécessaires à `PyAudio` sont installées (`portaudio19-dev`). Si `sudo` est requis, lancez `sudo apt-get install -y portaudio19-dev`.
-    - Assurez-vous que l'utilisateur `www-data` fait partie du groupe `audio` (`sudo usermod -aG audio www-data`). Un redémarrage complet de votre système peut être nécessaire pour que les changements de groupe prennent effet (`sudo reboot`).
-    - Vérifiez que le démon Python est bien lancé avec l'interpréteur Python du Virtual Environment (voir les logs du démon).
-- **"ERROR: Could not find a version that satisfies the requirement picovoice-porcupine"** :
-    - Assurez-vous d'utiliser la bonne version du package (`pvporcupine` et non `picovoice-porcupine`). Les dernières versions du plugin intègrent cette correction.
-    - Vérifiez que votre système est à jour et que `pip` est capable d'installer les binaires pour votre architecture (notamment AArch64 sur Raspberry Pi).
-- **Pas de réponse de l'IA** : Vérifiez votre clé API et les logs du plugin (`Analyse > Logs > ai_connector`).
-- **Erreur SSL** : Assurez-vous que votre Raspberry Pi est à l'heure (`sudo ntpd -q -g`).
-- **Problèmes de permissions** : Exécutez le script `install.sh` qui gère les permissions ou vérifiez manuellement les droits sur le dossier du plugin et les fichiers exécutables.
+#### Étape 3 : Vérification
+
+```bash
+sudo bash /var/www/html/plugins/ai_connector/resources/check_installation.sh
+```
+
+Doit afficher ✅ pour tous les éléments critiques.
+
+#### Étape 4 : Redémarrage
+
+```bash
+sudo systemctl restart jeedom
+```
+
+---
+
+## Configuration
+
+### 1. Obtenir les clés API
+
+#### 🔑 Google Gemini (Recommandé pour débuter)
+
+1. Allez sur https://aistudio.google.com
+2. **Get API Key** > **Create API key in new project**
+3. Acceptez les conditions
+4. **Copier** la clé (commence par `AIza...`)
+
+*Gratuit : 60 requêtes/min, illimitées en requêtes/jour*
+
+#### 🔑 Google Cloud (pour STT/TTS)
+
+1. https://console.cloud.google.com
+2. **Créer un projet**
+3. **APIs & Services** > **Activer les APIs** :
+   - Cloud Speech-to-Text
+   - Cloud Text-to-Speech
+4. **Identifiants** > **Créer un identifiant** > **Clé API**
+5. Télécharger le JSON et copier la clé
+
+*Gratuit : 60 minutes STT/mois, 1 million caractères TTS/mois*
+
+#### 🔑 OpenAI
+
+1. https://platform.openai.com/account/api-keys
+2. **+ Create new secret key**
+3. **Copier** (commence par `sk-...`)
+
+*Payant : ~0.005$ par 1K tokens (gpt-4o-mini)*
+
+#### 🔑 Mistral
+
+1. https://console.mistral.ai/api-keys
+2. **Generate a new API key**
+3. **Copier** (commence par `bHd...`)
+
+*Gratuit : 50 requêtes/jour (tier gratuit)*
+
+#### 🔑 Picovoice Porcupine (Wakeword)
+
+1. https://console.picovoice.ai/
+2. Se connecter/créer compte
+3. **AccessKey** > Copier la clé
+4. Garder le modèle par défaut "picovoice" ou en créer un personnalisé
+
+*Gratuit : 1 modèle personnalisé*
+
+### 2. Créer un équipement
+
+#### Configuration basique (texte seul)
+
+1. **Jeedom** > **Plugins** > **Communication** > **AI Connector**
+2. **+ Ajouter** équipement
+3. Remplir :
+   ```
+   Nom          : Ma IA Gemini
+   Objet parent : Cuisine
+   Moteur       : Google Gemini
+   Clé API      : AIza... (copié plus haut)
+   Modèle       : (laisser vide ou gemini-3-flash-preview)
+   Actif        : ✓ Coché
+   Visible      : ✓ Coché
+   ```
+4. **Sauvegarder**
+
+Les commandes sont créées automatiquement :
+- `Poser une question` (action, type message)
+- `Dernière réponse` (info, type string)
+
+#### Configuration avancée (avec STT/TTS)
+
+Ajouter les paramètres :
+
+```
+TTS activé           : ✓ Coché
+Clé Google Cloud     : (copier du JSON ou API Gemini)
+Langue TTS          : fr-FR
+Voix TTS            : fr-FR-Neural2-A (ou autre)
+Périphérique audio  : hw:2,0 (détecté automatiquement)
+
+STT activé          : ✓ Coché
+Moteur STT          : google (ou whisper pour local)
+Langue STT          : fr-FR
+Dispositif audio    : 1 (voir arecord -L)
+
+Wakeword activé     : ✓ Coché
+Clé Picovoice       : (copier d'AccessKey)
+Wakewords           : picovoice (ou autres)
+Sensibilité         : 0.95 (0.0 min, 1.0 max)
+```
+
+5. **Sauvegarder**
+
+---
+
+## Utilisation
+
+### Cas d'usage 1 : Question simple dans un scénario
+
+```
+Bloc d'action:
+Action : #[Cuisine][Ma IA][Poser une question]#
+Message : Quel est le meilleur moment pour faire cuire un gâteau?
+```
+
+Puis récupérer la réponse :
+```
+Bloc d'action suivant:
+Afficher notification : #[Cuisine][Ma IA][Dernière réponse]#
+```
+
+### Cas d'usage 2 : Contexte dynamique
+
+```
+Message : "La température extérieure est #[Terrasse][Sonde][Temp]#°C et l'humidité #[Terrasse][Sonde][Humidité]#%. \
+Dois-je faire ma lessive aujourd'hui?"
+```
+
+L'IA reçoit les valeurs actuelles de Jeedom.
+
+### Cas d'usage 3 : Activation via wakeword + TTS
+
+1. Assistant détecte "picovoice"
+2. Enregistrement de 5 secondes
+3. Transcription STT
+4. Réponse IA
+5. Lecture TTS automatique
+
+**Configuration requise** :
+- Wakeword activé ✓
+- STT activé ✓
+- TTS activé ✓
+
+### Cas d'usage 4 : Utiliser la réponse dans une logique
+
+```
+SI #[Salon][Mon IA][Dernière réponse]# contient "oui"
+ALORS
+  #[Salon][Lumière salon][Allumer]#
+FIN SI
+```
+
+---
+
+## Fonctionnalités avancées
+
+### Timeouts anti-boucle
+
+Le plugin utilise 2 stratégies :
+
+| Situation | Timeout | Raison |
+|-----------|---------|--------|
+| Appel manuel (scénario) | 30 secondes | Laisser le temps de tester |
+| Appel STT (démon) | 10 secondes | Éviter les répétitions microphone |
+
+**Comment ça marche** :
+1. Vous envoyez "Bonjour"
+2. Réponse reçue et cachée
+3. Pendant 30s, toute demande "Bonjour" est bloquée
+4. Après 30s, la demande est à nouveau acceptée
+
+*Cela évite les boucles infinies si un scénario déclenche lui-même l'IA.*
+
+### Gestion dynamique du périphérique audio
+
+Le plugin détecte automatiquement :
+
+```bash
+Recherche dans aplay -l:
+- "Headphones" (Jack stéréo Raspberry Pi)
+- "bcm2835" (Raspberry Pi onboard)
+- "USB Audio" (Casque/Enceinte USB)
+```
+
+Si aucun détecté → hw:0,0 (fallback)
+
+**Vérifier votre périphérique** :
+```bash
+aplay -l
+# Exemple output:
+# card 2: Headphones [Headphones], device 0: bcm2835 Headphones [bcm2835 Headphones]
+#   Subdevices: 0/1
+#     Subdevice #0: subdevice #0
+
+# → Utilisez hw:2,0
+```
+
+### Logs détaillés
+
+**Plugin** (`/var/www/html/log/ai_connector`) :
+```
+[2026-01-01 18:55:06] DEBUG  Sending to Gemini...
+[2026-01-01 18:55:10] DEBUG  CURL HTTP Code: 200
+[2026-01-01 18:55:10] INFO   Réponse IA: Bonjour...
+[2026-01-01 18:55:10] DEBUG  TTS: Audio en cours de lecture
+```
+
+**Démon** (`/var/www/html/log/ai_connector_daemon`) :
+```
+[2026-01-01 18:54:09] INFO  Démon lancé en mode Wakeword
+[2026-01-01 18:54:15] INFO  Démon STT response: {"results": [...]}
+[2026-01-01 18:54:16] INFO  Envoi à Jeedom : votre question
+[2026-01-01 18:54:20] INFO  Texte envoyé à Jeedom avec succès
+```
+
+---
+
+## Dépannage
+
+### ❌ TTS ne joue pas
+
+**Diagnostic** :
+```bash
+# 1. Vérifier mpg123
+which mpg123
+
+# 2. Tester le son directement
+speaker-test -t sine -f 1000 -l 1
+
+# 3. Vérifier les droits
+groups www-data | grep audio
+
+# 4. Vérifier le fichier audio
+file /tmp/ai_tts.mp3
+
+# 5. Logs détaillés
+tail -f /var/www/html/log/ai_connector | grep TTS
+```
+
+**Solutions** :
+- Si mpg123 manquant : `sudo apt-get install mpg123`
+- Si pas de son : `sudo usermod -aG audio www-data` + redémarrage
+- Si périphérique incorrect : Vérifier avec `aplay -l` et ajuster dans config
+
+### ❌ STT ne transcrit pas
+
+**Diagnostic** :
+```bash
+# 1. Tester microphone
+arecord -t wav -c 1 -r 16000 /tmp/test.wav
+# Parlez puis Ctrl+C - doit avoir creé le fichier
+
+# 2. Vérifier le modèle Whisper
+ls /var/www/html/plugins/ai_connector/resources/whisper.cpp/models/
+# Doit avoir ggml-tiny.bin
+
+# 3. Vérifier si démon tourne
+pgrep -a ai_connector_daemon
+
+# 4. Vérifier les logs
+tail -f /var/www/html/log/ai_connector_daemon | grep STT
+```
+
+**Solutions** :
+- Microphone non détecté : Vérifier `arecord -L` et ajuster device_id
+- Modèle manquant : Relancer install.sh
+- Démon arrêté : Redémarrer Jeedom
+
+### ❌ Réponse lente (>45s)
+
+**C'est normal** si :
+- Gemini dépasse 30s (API surchargée)
+- Microphone enregistre 5s + transcription 5s = 10s rien que pour ça
+
+**Diagnostic** :
+```bash
+# Vérifier temps Gemini
+grep "CURL\|Gemini" /var/www/html/log/ai_connector | tail -20
+
+# Vérifier quota API
+# → Panel Google Console, Graph API
+
+# Vérifier charge Jeedom
+uptime
+```
+
+**Solutions** :
+- Si quota dépassé : Attendre ou passer à OpenAI
+- Si CPU élevé : Arrêter autres plugins
+- Si réseau lent : Approcher du WiFi
+
+### ❌ Wakeword ne se déclenche pas
+
+**Diagnostic** :
+```bash
+# 1. Vérifier sensibilité (par défaut 0.95)
+# Configuration > Sensibilité Picovoice
+
+# 2. Tester micro en direct
+arecord -t wav -c 1 -r 16000 -D hw:1,0 /tmp/test.wav
+# Parlez "picovoice" clairement
+# Vérifier le fichier a du contenu
+
+# 3. Vérifier clé Picovoice
+grep "porcupine_access_key" /var/www/html/log/ai_connector_daemon
+
+# 4. Logs détaillés
+tail -100 /var/www/html/log/ai_connector_daemon | grep -i porcupine
+```
+
+**Solutions** :
+- Augmenter sensibilité à 0.99 (plus sensible)
+- Parler plus fort/près du micro
+- Vérifier clé Picovoice valide
+- Relancer démon : `jeedom::daemon_stop()` + restart Jeedom
+
+### ❌ "Erreur Gemini : Structure inconnue"
+
+**Diagnostic** :
+```bash
+# Vérifier réponse brute Gemini
+grep "CURL Raw response\|Gemini response" /var/www/html/log/ai_connector
+
+# Vérifier API key valide
+# Vérifier quota
+```
+
+**Solutions** :
+- Vérifier clé API valide
+- Vérifier quota Gemini (60 req/min)
+- Essayer autre modèle
+- Vérifier connexion internet : `curl -I https://google.com`
+
+### ❌ Timeout Jeedom (HTTPConnectionPool)
+
+**Diagnostic** :
+```bash
+# Vérifier si Jeedom répond
+curl http://127.0.0.1/ping
+
+# Vérifier logs démon
+grep "HTTPConnectionPool" /var/www/html/log/ai_connector_daemon
+```
+
+**Solutions** :
+- Jeedom est lent : `sudo systemctl restart jeedom`
+- Augmenter timeout daemon : éditer ressource, augmenter 15s
+- Vérifier charge : `htop`
+
+---
+
+## 📞 Support & Ressources
+
+**GitHub** : https://github.com/Yoann81/Jeedom-AI
+
+**Logs** :
+- Plugin : `tail -f /var/www/html/log/ai_connector`
+- Démon : `tail -f /var/www/html/log/ai_connector_daemon`
+
+**Version** : 2.0.0  
+**Auteur** : Yoann Joulia  
+**Licence** : AGPL v3.0
