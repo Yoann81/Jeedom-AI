@@ -202,10 +202,21 @@ class ai_connector extends eqLogic {
         $response = $this->sendCurl($url, $data);
         log::add('ai_connector', 'debug', 'Gemini response received: ' . json_encode($response));
         
+        // Vérifier les erreurs d'API (quota, authentification, etc.)
+        if (isset($response['error'])) {
+            $errorMessage = "Erreur API Gemini: " . json_encode($response['error']);
+            log::add('ai_connector', 'error', $errorMessage);
+            return "Erreur Gemini : " . ($response['error']['message'] ?? json_encode($response['error']));
+        }
+        
         if (isset($response['candidates'][0]['content']['parts'][0]['text'])) {
             return $response['candidates'][0]['content']['parts'][0]['text'];
         }
-        return "Erreur Gemini : " . ($response['error']['message'] ?? "Structure inconnue");
+        
+        // Si la structure n'est pas celle attendue, logger l'erreur
+        $errorMessage = "Structure de réponse Gemini inattendue: " . json_encode($response);
+        log::add('ai_connector', 'error', $errorMessage);
+        return "Erreur Gemini : Structure inconnue";
     }
 
     private function callOpenAI($systemPrompt, $userMessage, $apiKey, $model) {
@@ -225,9 +236,17 @@ class ai_connector extends eqLogic {
             "messages" => $messages
         ];
         $headers = ['Content-Type: application/json', 'Authorization: Bearer ' . $apiKey];
-        log::add('ai_connector', 'debug', 'Sending to OpenAI URL: ' . $url . ' with data: ' . json_encode($data)); // Add this line
+        log::add('ai_connector', 'debug', 'Sending to OpenAI URL: ' . $url . ' with data: ' . json_encode($data));
         $response = $this->sendCurl($url, $data, $headers);
-        return $response['choices'][0]['message']['content'] ?? "Erreur OpenAI";
+        
+        // Vérifier les erreurs d'API
+        if (isset($response['error'])) {
+            $errorMessage = "Erreur API OpenAI: " . json_encode($response['error']);
+            log::add('ai_connector', 'error', $errorMessage);
+            return "Erreur OpenAI : " . ($response['error']['message'] ?? json_encode($response['error']));
+        }
+        
+        return $response['choices'][0]['message']['content'] ?? "Erreur OpenAI: Structure inconnue";
     }
 
     private function callMistral($systemPrompt, $userMessage, $apiKey, $model) {
@@ -244,9 +263,17 @@ class ai_connector extends eqLogic {
         
         $data = ["model" => $modelId, "messages" => $messages];
         $headers = ['Content-Type: application/json', 'Authorization: Bearer ' . $apiKey];
-        log::add('ai_connector', 'debug', 'Sending to Mistral URL: ' . $url . ' with data: ' . json_encode($data)); // Add this line
+        log::add('ai_connector', 'debug', 'Sending to Mistral URL: ' . $url . ' with data: ' . json_encode($data));
         $response = $this->sendCurl($url, $data, $headers);
-        return $response['choices'][0]['message']['content'] ?? "Erreur Mistral";
+        
+        // Vérifier les erreurs d'API
+        if (isset($response['error'])) {
+            $errorMessage = "Erreur API Mistral: " . json_encode($response['error']);
+            log::add('ai_connector', 'error', $errorMessage);
+            return "Erreur Mistral : " . ($response['error']['message'] ?? json_encode($response['error']));
+        }
+        
+        return $response['choices'][0]['message']['content'] ?? "Erreur Mistral: Structure inconnue";
     }
 
     private function findAudioDevice() {
@@ -295,6 +322,14 @@ class ai_connector extends eqLogic {
         ];
 
         $response = $this->sendCurl($url, $data);
+        
+        // Vérifier les erreurs d'API TTS
+        if (isset($response['error'])) {
+            $errorMessage = "Erreur API Google TTS: " . json_encode($response['error']);
+            log::add('ai_connector', 'error', $errorMessage);
+            return;
+        }
+        
         if (isset($response['audioContent'])) {
             $audioData = base64_decode($response['audioContent']);
             $audioFile = '/tmp/ai_tts.mp3';
@@ -314,7 +349,8 @@ class ai_connector extends eqLogic {
             exec($cmd);
             log::add('ai_connector', 'debug', 'TTS: Commande mpg123 lancée en arrière-plan');
         } else {
-            log::add('ai_connector', 'error', 'Erreur TTS Google: ' . json_encode($response));
+            $errorMessage = "Erreur réponse TTS Google (structure inconnue): " . json_encode($response);
+            log::add('ai_connector', 'error', $errorMessage);
         }
         } catch (Exception $e) {
             log::add('ai_connector', 'error', 'Exception TTS: ' . $e->getMessage());
