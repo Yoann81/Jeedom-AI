@@ -59,6 +59,7 @@ class ai_connector extends eqLogic {
         $sttEngine = $listeningEqLogic->getConfiguration('stt_engine', 'whisper');
         $googleApiKey = $listeningEqLogic->getConfiguration('google_api_key', '');
         $sttLanguage = $listeningEqLogic->getConfiguration('stt_language', 'fr-FR');
+        $porcupineSensitivity = $listeningEqLogic->getConfiguration('porcupine_sensitivity', '0.95');
         
         $path = realpath(dirname(__FILE__) . '/../../resources/demond/ai_connector_daemon.py');
         if (!file_exists($path)) {
@@ -80,6 +81,7 @@ class ai_connector extends eqLogic {
             } else {
                 $cmd .= " --porcupine_enable 1";
                 $cmd .= " --porcupine_access_key " . escapeshellarg($porcupineAccessKey);
+                $cmd .= " --porcupine_sensitivity " . escapeshellarg($porcupineSensitivity);
                 
                 if (!empty($porcupineWakewordNames)) {
                     $cmd .= " --porcupine_wakeword_names " . escapeshellarg($porcupineWakewordNames);

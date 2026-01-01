@@ -227,7 +227,7 @@ def listen_periodic(device_id, api_key, cmd_id, stt_engine="whisper", google_api
         time.sleep(0.1) # Small delay to prevent 100% CPU usage
 
 
-def listen_wakeword(device_id, api_key, cmd_id, porcupine_access_key, porcupine_wakeword_names, stt_engine="whisper", google_api_key="", stt_language="fr-FR"):
+def listen_wakeword(device_id, api_key, cmd_id, porcupine_access_key, porcupine_wakeword_names, stt_engine="whisper", google_api_key="", stt_language="fr-FR", porcupine_sensitivity="0.95"):
     """Boucle d'écoute avec détection de wakeword Porcupine."""
     if not PORCUPINE_AVAILABLE:
         log("Erreur : Picovoice Porcupine n'est pas disponible. Le mode Wakeword est désactivé.")
@@ -245,10 +245,14 @@ def listen_wakeword(device_id, api_key, cmd_id, porcupine_access_key, porcupine_
                 raise ValueError("Aucun nom de wakeword valide fourni pour Picovoice Porcupine.")
             log(f"Utilisation des wakewords par défaut : {', '.join(wakeword_list)}")
             try:
+                # Convertir la sensibilité en float et appliquer pour tous les wakewords
+                sensitivity_float = float(porcupine_sensitivity)
+                sensitivities = [sensitivity_float] * len(wakeword_list)
+                log(f"Sensibilité Picovoice : {sensitivity_float}")
                 porcupine_instance = pvporcupine.create(
                     access_key=porcupine_access_key,
                     keywords=wakeword_list,
-                    sensitivities=[0.8] * len(wakeword_list)
+                    sensitivities=sensitivities
                 )
             except Exception as e:
                 log(f"Erreur lors de la creation de l instance Picovoice : {e}")
@@ -333,6 +337,7 @@ if __name__ == "__main__":
     parser.add_argument("--porcupine_enable", type=int, default=0, help="Activer la détection de wakeword Picovoice.")
     parser.add_argument("--porcupine_access_key", default="", help="Clé d'accès Picovoice pour le wakeword.")
     parser.add_argument("--porcupine_wakeword_names", default="picovoice", help="Liste des noms de wakewords Picovoice par défaut (séparés par des virgules).")
+    parser.add_argument("--porcupine_sensitivity", default="0.95", help="Sensibilité Picovoice (0.0-1.0, défaut: 0.95).")
     args = parser.parse_args()
 
     # --- Boilerplate de démon Jeedom ---
@@ -357,7 +362,7 @@ if __name__ == "__main__":
                 log("Erreur : Clé d'accès Picovoice manquante. Rebasculement en mode périodique.", file=sys.stderr)
                 listen_periodic(args.device_id, args.apikey, args.cmd_id, args.stt_engine, args.google_api_key, args.stt_language)
             else:
-                listen_wakeword(args.device_id, args.apikey, args.cmd_id, args.porcupine_access_key, args.porcupine_wakeword_names, args.stt_engine, args.google_api_key, args.stt_language)
+                listen_wakeword(args.device_id, args.apikey, args.cmd_id, args.porcupine_access_key, args.porcupine_wakeword_names, args.stt_engine, args.google_api_key, args.stt_language, args.porcupine_sensitivity)
         else:
             log("Démon AI Multi-Connect : Mode d'écoute périodique activé (sans wakeword).")
             listen_periodic(args.device_id, args.apikey, args.cmd_id, args.stt_engine, args.google_api_key, args.stt_language)
