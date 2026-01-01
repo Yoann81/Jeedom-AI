@@ -129,8 +129,14 @@ def send_to_jeedom(text, api_key, cmd_id):
     url = f"{JEEDOM_URL}?apikey={api_key}&type=cmd&id={cmd_id}&message={encoded_text}&source=stt_daemon"
     
     try:
-        r = requests.get(url, timeout=5)
+        # Timeout augmenté à 15s pour donner plus de temps à Jeedom de traiter
+        r = requests.get(url, timeout=15)
         r.raise_for_status()
+        log(f"Texte envoyé à Jeedom avec succès")
+    except requests.exceptions.Timeout:
+        log(f"Timeout lors de l'envoi à Jeedom (15s dépassé). Jeedom peut être surchargé.")
+    except requests.exceptions.ConnectionError as e:
+        log(f"Erreur de connexion à Jeedom : {e}")
     except requests.exceptions.RequestException as e:
         log(f"Erreur d'envoi Jeedom : {e}")
 
