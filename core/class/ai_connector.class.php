@@ -200,6 +200,7 @@ class ai_connector extends eqLogic {
         $data = ["contents" => [["parts" => [["text" => $finalPrompt]]]]];
         log::add('ai_connector', 'debug', 'Sending to Gemini URL: ' . $url . ' with data: ' . json_encode($data)); // Add this line
         $response = $this->sendCurl($url, $data);
+        log::add('ai_connector', 'debug', 'Gemini response received: ' . json_encode($response));
         
         if (isset($response['candidates'][0]['content']['parts'][0]['text'])) {
             return $response['candidates'][0]['content']['parts'][0]['text'];
