@@ -162,6 +162,7 @@ def transcribe_and_send(api_key, cmd_id, stt_engine="whisper", google_api_key=""
             response = requests.post(url, json=data, timeout=30)
             response.raise_for_status()
             result = response.json()
+            log(f"Google STT response: {result}")
             text = result.get('results', [{}])[0].get('alternatives', [{}])[0].get('transcript', '')
         else:
             # Use Whisper
