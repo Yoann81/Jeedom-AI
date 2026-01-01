@@ -290,8 +290,14 @@ class ai_connector extends eqLogic {
             // Play the audio
             $cmd = "mpg123 " . escapeshellarg($audioFile) . " > /dev/null 2>&1 &";
             log::add('ai_connector', 'debug', 'TTS: Commande de lecture: ' . $cmd);
-            exec($cmd);
-            log::add('ai_connector', 'info', 'TTS: Commande exécutée');
+            $output = array();
+            $return_var = 0;
+            exec($cmd, $output, $return_var);
+            if ($return_var != 0) {
+                log::add('ai_connector', 'error', 'TTS: Erreur exécution mpg123, code: ' . $return_var . ', output: ' . implode(' ', $output));
+            } else {
+                log::add('ai_connector', 'info', 'TTS: Commande mpg123 exécutée avec succès');
+            }
         } else {
             log::add('ai_connector', 'error', 'Erreur TTS Google: ' . json_encode($response));
         }
