@@ -12,23 +12,26 @@ echo "--- Début de l'installation des dépendances de AI Connector ---"
 
 echo "Installation des librairies systeme audio et outils essentiels..."
 sudo apt-get update
-sudo apt-get install -y \
-    libportaudio2 libportaudiocpp0 portaudio19-dev \
-    python3-pyaudio python3-dev \
+
+# Installation des dépendances critiques SANS JACK
+# Utiliser --no-install-recommends pour éviter les dépendances JACK optionnelles
+sudo apt-get install -y --no-install-recommends \
+    libportaudio2 python3-pyaudio \
     alsa-utils \
     wget curl mpg123 ffmpeg jq \
-    libasound2-dev
+    libasound2-dev \
+    python3-dev
 
-echo "Nettoyage des serveurs audio inutiles (JACK)..."
-# Supprimer JACK SANS supprimer ses dépendances
-sudo apt-get remove -y jackd2 jackd || true
-# Garder les dépendances mais pas le serveur complet
-sudo apt-get autoremove -y
+# Supprimer JACK s'il est installé (optionnel, généralement pas présent)
+echo "Suppression de JACK si présent..."
+sudo apt-get remove -y jackd2 jackd jack-tools libjack0 libjack-jackd2-0 || true
 
-# Réinstaller les packages qui pourraient avoir été supprimés accidentellement
+# NE PAS lancer autoremove qui supprimerait nos packages critiques
+# À la place, on réinstalle les packages explicitement
 echo "Vérification et réinstallation des dépendances critiques..."
-sudo apt-get install -y \
+sudo apt-get install -y --no-install-recommends \
     libportaudio2 python3-pyaudio mpg123 ffmpeg \
+    libasound2-dev portaudio19-dev \
     || true
 
 # 4. Téléchargement du modèle de langue léger (TINY)
