@@ -320,6 +320,7 @@ class ai_connector extends eqLogic {
     }
 
     private function speakWithGoogleTTS($text, $apiKey, $language, $voice, $audioDevice = 'hw:0,0') {
+        log::add('ai_connector', 'warning', 'TTS: speakWithGoogleTTS APPELÉE');
         try {
             log::add('ai_connector', 'debug', 'TTS: Démarrage speakWithGoogleTTS, texte longueur=' . strlen($text));
             if (empty($apiKey) || empty($text)) {
@@ -379,8 +380,9 @@ class ai_connector extends eqLogic {
             log::add('ai_connector', 'error', $errorMessage);
         }
         } catch (Exception $e) {
-            log::add('ai_connector', 'error', 'Exception TTS: ' . $e->getMessage());
+            log::add('ai_connector', 'error', 'TTS Exception: ' . $e->getMessage() . ' - Trace: ' . $e->getTraceAsString());
         }
+        log::add('ai_connector', 'warning', 'TTS: speakWithGoogleTTS TERMINÉE');
     }
 } // <--- L'accolade de fin de classe doit être ICI
 
