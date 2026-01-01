@@ -104,17 +104,6 @@ $eqLogics = eqLogic::byType('ai_connector');
                             </div>
                         </div>
                         <div class="form-group">
-                            <label class="col-sm-3 control-label">{{Commande de retour (HP)}}</label>
-                            <div class="col-sm-4">
-                                <div class="input-group">
-                                    <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="voice_cmd_id" />
-                                    <span class="input-group-btn">
-                                        <a class="btn btn-default bt_selectCmdExpression"><i class="fas fa-list-alt"></i></a>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-group">
                             <label class="col-sm-3 control-label">{{ID Micro (Index)}}</label>
                             <div class="col-sm-2">
                                 <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="voice_device_id" placeholder="1"/>
@@ -194,6 +183,12 @@ $eqLogics = eqLogic::byType('ai_connector');
                             <label class="col-sm-3 control-label">{{Voix TTS}}</label>
                             <div class="col-sm-3">
                                 <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="tts_voice" placeholder="fr-FR-Neural2-A"/>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">{{Périphérique audio TTS}}</label>
+                            <div class="col-sm-3">
+                                <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="tts_audio_device" placeholder="hw:0,0"/>
                             </div>
                         </div>
                     </fieldset>

@@ -46,7 +46,12 @@ class ai_connector extends eqLogic {
         $listeningEqLogic = $activeListeners[0];
 
         $apikey = config::byKey('api', 'core');
-        $cmdId = $listeningEqLogic->getConfiguration('voice_cmd_id');
+        $askCmd = $listeningEqLogic->getCmd(null, 'ask');
+        if (!is_object($askCmd)) {
+            log::add('ai_connector', 'error', 'Commande "Poser une question" introuvable pour l\'équipement d\'écoute (' . $listeningEqLogic->getHumanName() . ').');
+            return;
+        }
+        $cmdId = $askCmd->getId();
         $deviceId = $listeningEqLogic->getConfiguration('voice_device_id', '1');
         $porcupineEnable = $listeningEqLogic->getConfiguration('porcupine_enable', 0);
         $porcupineAccessKey = $listeningEqLogic->getConfiguration('porcupine_access_key', '');
@@ -55,11 +60,6 @@ class ai_connector extends eqLogic {
         $googleApiKey = $listeningEqLogic->getConfiguration('google_api_key', '');
         $sttLanguage = $listeningEqLogic->getConfiguration('stt_language', 'fr-FR');
         
-        if (empty($cmdId)) {
-            log::add('ai_connector', 'error', 'ID de commande de retour (HP) non configuré pour l\'équipement d\'écoute (' . $listeningEqLogic->getHumanName() . ').');
-            return;
-        }
-
         $path = realpath(dirname(__FILE__) . '/../../resources/demond/ai_connector_daemon.py');
         if (!file_exists($path)) {
             log::add('ai_connector', 'error', 'Script Python introuvable : ' . $path);
@@ -261,7 +261,7 @@ class ai_connector extends eqLogic {
         return json_decode($rawResponse, true);
     }
 
-    private function speakWithGoogleTTS($text, $apiKey, $language, $voice) {
+    private function speakWithGoogleTTS($text, $apiKey, $language, $voice, $audioDevice = 'hw:0,0') {
         if (empty($apiKey) || empty($text)) {
             log::add('ai_connector', 'warning', 'TTS: Clé API ou texte vide');
             return;
@@ -298,7 +298,7 @@ class ai_connector extends eqLogic {
                 log::add('ai_connector', 'error', 'TTS: mpg123 non trouvé à /usr/bin/mpg123');
                 return;
             }
-            $cmd = "/usr/bin/mpg123 " . escapeshellarg($audioFile) . " > /dev/null 2>&1 &";
+            $cmd = "/usr/bin/mpg123 -a " . escapeshellarg($audioDevice) . " " . escapeshellarg($audioFile) . " > /dev/null 2>&1 &";
             log::add('ai_connector', 'debug', 'TTS: Commande de lecture: ' . $cmd);
             exec($cmd);
             log::add('ai_connector', 'debug', 'TTS: Commande mpg123 lancée en arrière-plan');
@@ -348,7 +348,8 @@ class ai_connectorCmd extends cmd {
             $googleApiKey = $eqLogic->getConfiguration('google_api_key');
             $ttsLanguage = $eqLogic->getConfiguration('tts_language', 'fr-FR');
             $ttsVoice = $eqLogic->getConfiguration('tts_voice', 'fr-FR-Neural2-A');
-            $eqLogic->speakWithGoogleTTS($response, $googleApiKey, $ttsLanguage, $ttsVoice);
+            $ttsAudioDevice = $eqLogic->getConfiguration('tts_audio_device', 'hw:0,0');
+            $eqLogic->speakWithGoogleTTS($response, $googleApiKey, $ttsLanguage, $ttsVoice, $ttsAudioDevice);
         } else {
             log::add('ai_connector', 'debug', 'TTS désactivé');
         }
