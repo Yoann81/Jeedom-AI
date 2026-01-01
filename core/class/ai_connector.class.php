@@ -292,15 +292,18 @@ class ai_connector extends eqLogic {
             }
             log::add('ai_connector', 'info', 'TTS: Audio généré, fichier: ' . $audioFile . ', taille: ' . $bytesWritten . ' bytes');
             // Play the audio
-            $cmd = "/usr/bin/mpg123 " . escapeshellarg($audioFile) . " > /dev/null 2>&1 &";
+            if (!file_exists('/usr/bin/mpg123')) {
+                log::add('ai_connector', 'error', 'TTS: mpg123 non trouvé à /usr/bin/mpg123');
+                return;
+            }
+            $cmd = "/usr/bin/mpg123 " . escapeshellarg($audioFile) . " 2>&1";
             log::add('ai_connector', 'debug', 'TTS: Commande de lecture: ' . $cmd);
             $output = array();
             $return_var = 0;
             exec($cmd, $output, $return_var);
-            if ($return_var != 0) {
-                log::add('ai_connector', 'error', 'TTS: Erreur exécution mpg123, code: ' . $return_var . ', output: ' . implode(' ', $output));
-            } else {
-                log::add('ai_connector', 'info', 'TTS: Commande mpg123 exécutée avec succès');
+            log::add('ai_connector', 'info', 'TTS: mpg123 return code: ' . $return_var);
+            if (!empty($output)) {
+                log::add('ai_connector', 'info', 'TTS: mpg123 output: ' . implode(' ', $output));
             }
         } else {
             log::add('ai_connector', 'error', 'Erreur TTS Google: ' . json_encode($response));
