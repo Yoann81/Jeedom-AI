@@ -126,7 +126,7 @@ def send_to_jeedom(text, api_key, cmd_id):
         
     log(f"Envoi à Jeedom : {clean_text}")
     encoded_text = quote(clean_text)
-    url = f"{JEEDOM_URL}?apikey={api_key}&type=cmd&id={cmd_id}&message={encoded_text}"
+    url = f"{JEEDOM_URL}?apikey={api_key}&type=cmd&id={cmd_id}&message={encoded_text}&source=stt_daemon"
     
     try:
         r = requests.get(url, timeout=5)

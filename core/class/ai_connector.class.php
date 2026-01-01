@@ -318,13 +318,17 @@ class ai_connectorCmd extends cmd {
         $prompt = $_options['message'] ?? '';
         
         // Éviter les boucles : vérifier si le même prompt a été traité récemment
+        // Pour les appels manuels, être moins restrictif (2 secondes au lieu de 10)
+        $is_manual_call = !isset($_options['source']) || $_options['source'] !== 'stt_daemon';
+        $timeout_seconds = $is_manual_call ? 2 : 10; // 2s pour manuel, 10s pour STT
+        
         $cache_key = 'ai_connector_last_prompt_' . $eqLogic->getId();
         $last_prompt = cache::byKey($cache_key)->getValue('');
         $last_time = cache::byKey($cache_key . '_time')->getValue(0);
         $current_time = time();
         
-        if ($prompt === $last_prompt && ($current_time - $last_time) < 10) { // 10 secondes
-            log::add('ai_connector', 'warning', 'Prompt dupliqué ignoré pour éviter la boucle: ' . $prompt);
+        if ($prompt === $last_prompt && ($current_time - $last_time) < $timeout_seconds) {
+            log::add('ai_connector', 'warning', 'Prompt dupliqué ignoré pour éviter la boucle (' . $timeout_seconds . 's): ' . $prompt);
             return;
         }
         
