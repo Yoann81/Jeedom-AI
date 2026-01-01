@@ -321,9 +321,9 @@ class ai_connector extends eqLogic {
 
     private function speakWithGoogleTTS($text, $apiKey, $language, $voice, $audioDevice = 'hw:0,0') {
         try {
-            log::add('ai_connector', 'debug', 'TTS: Démarrage génération audio, apiKey présent: ' . (!empty($apiKey) ? 'oui' : 'non') . ', texte longueur: ' . strlen($text));
+            log::add('ai_connector', 'debug', 'TTS: Démarrage speakWithGoogleTTS, texte longueur=' . strlen($text));
             if (empty($apiKey) || empty($text)) {
-                log::add('ai_connector', 'warning', 'TTS: Clé API ou texte vide');
+                log::add('ai_connector', 'warning', 'TTS: Clé API ou texte vide - apiKey=' . (empty($apiKey) ? 'vide' : 'ok') . ', text=' . (empty($text) ? 'vide' : 'ok'));
                 return;
             }
 
@@ -429,7 +429,13 @@ class ai_connectorCmd extends cmd {
             $ttsLanguage = $eqLogic->getConfiguration('tts_language', 'fr-FR');
             $ttsVoice = $eqLogic->getConfiguration('tts_voice', 'fr-FR-Neural2-A');
             $ttsAudioDevice = $eqLogic->getConfiguration('tts_audio_device', 'hw:0,0');
-            $eqLogic->speakWithGoogleTTS($response, $googleApiKey, $ttsLanguage, $ttsVoice, $ttsAudioDevice);
+            log::add('ai_connector', 'debug', 'TTS Config: apiKey=' . (!empty($googleApiKey) ? 'ok' : 'vide') . ', lang=' . $ttsLanguage . ', voice=' . $ttsVoice . ', device=' . $ttsAudioDevice);
+            try {
+                $eqLogic->speakWithGoogleTTS($response, $googleApiKey, $ttsLanguage, $ttsVoice, $ttsAudioDevice);
+                log::add('ai_connector', 'debug', 'TTS: Appel speakWithGoogleTTS complété');
+            } catch (Exception $e) {
+                log::add('ai_connector', 'error', 'TTS: Exception lors de speakWithGoogleTTS: ' . $e->getMessage());
+            }
         } else {
             log::add('ai_connector', 'debug', 'TTS désactivé');
         }
