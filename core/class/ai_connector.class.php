@@ -276,6 +276,32 @@ class ai_connector extends eqLogic {
         return $response['choices'][0]['message']['content'] ?? "Erreur Mistral: Structure inconnue";
     }
 
+    private function sendCurl($url, $data, $headers = ['Content-Type: application/json']) {
+        log::add('ai_connector', 'debug', 'CURL: Envoi de la requête à ' . $url);
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        
+        $rawResponse = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+        
+        if ($curlError) {
+            log::add('ai_connector', 'error', 'CURL Error: ' . $curlError);
+            curl_close($ch);
+            return [];
+        }
+        
+        log::add('ai_connector', 'debug', 'CURL HTTP Code: ' . $httpCode);
+        log::add('ai_connector', 'debug', 'CURL Raw response: ' . substr($rawResponse, 0, 500));
+        
+        curl_close($ch);
+        return json_decode($rawResponse, true);
+    }
+
     private function findAudioDevice() {
         // Recherche dynamique du périphérique audio comme dans le démon Python
         $defaultDevice = 'hw:0,0';
