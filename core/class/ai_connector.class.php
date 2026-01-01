@@ -285,7 +285,7 @@ class ai_connector extends eqLogic {
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 60); // Augmenté à 60s pour les APIs lentes (Gemini, OpenAI, etc)
         
         $rawResponse = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -322,70 +322,62 @@ class ai_connector extends eqLogic {
     }
 
     public function speakWithGoogleTTS($text, $apiKey, $language, $voice, $audioDevice = 'hw:0,0') {
-        log::add('ai_connector', 'error', 'TTS METHOD ENTRY - text length: ' . strlen($text) . ', apiKey empty: ' . (empty($apiKey) ? 'yes' : 'no'));
-        log::add('ai_connector', 'warning', 'TTS: speakWithGoogleTTS APPELÉE');
         try {
-            log::add('ai_connector', 'debug', 'TTS: Démarrage speakWithGoogleTTS, texte longueur=' . strlen($text));
             if (empty($apiKey) || empty($text)) {
-                log::add('ai_connector', 'warning', 'TTS: Clé API ou texte vide - apiKey=' . (empty($apiKey) ? 'vide' : 'ok') . ', text=' . (empty($text) ? 'vide' : 'ok'));
+                log::add('ai_connector', 'warning', 'TTS: Clé API ou texte vide');
                 return;
             }
 
-            // Recherche dynamique du périphérique audio comme pour la notification
+            // Recherche dynamique du périphérique audio
             $audioDevice = $this->findAudioDevice();
-            log::add('ai_connector', 'debug', 'TTS: Périphérique audio détecté: ' . $audioDevice);
 
-        // Tronquer le texte à 4000 caractères pour respecter la limite Google TTS
-        $text = substr($text, 0, 4000);
-        log::add('ai_connector', 'info', 'TTS: Génération audio pour texte tronqué: ' . substr($text, 0, 50) . '...');
+            // Tronquer le texte à 4000 caractères pour respecter la limite Google TTS
+            $text = substr($text, 0, 4000);
 
-        $url = "https://texttospeech.googleapis.com/v1/text:synthesize?key=" . $apiKey;
-        $data = [
-            "input" => ["text" => $text],
-            "voice" => [
-                "languageCode" => $language ?: "fr-FR",
-                "name" => $voice ?: "fr-FR-Neural2-A"
-            ],
-            "audioConfig" => [
-                "audioEncoding" => "MP3"
-            ]
-        ];
+            $url = "https://texttospeech.googleapis.com/v1/text:synthesize?key=" . $apiKey;
+            $data = [
+                "input" => ["text" => $text],
+                "voice" => [
+                    "languageCode" => $language ?: "fr-FR",
+                    "name" => $voice ?: "fr-FR-Neural2-A"
+                ],
+                "audioConfig" => [
+                    "audioEncoding" => "MP3"
+                ]
+            ];
 
-        $response = $this->sendCurl($url, $data);
-        
-        // Vérifier les erreurs d'API TTS
-        if (isset($response['error'])) {
-            $errorMessage = "Erreur API Google TTS: " . json_encode($response['error']);
-            log::add('ai_connector', 'error', $errorMessage);
-            return;
-        }
-        
-        if (isset($response['audioContent'])) {
-            $audioData = base64_decode($response['audioContent']);
-            $audioFile = '/tmp/ai_tts.mp3';
-            $bytesWritten = file_put_contents($audioFile, $audioData);
-            if ($bytesWritten === false) {
-                log::add('ai_connector', 'error', 'TTS: Échec écriture fichier audio');
+            $response = $this->sendCurl($url, $data);
+            
+            // Vérifier les erreurs d'API TTS
+            if (isset($response['error'])) {
+                log::add('ai_connector', 'error', 'Erreur API Google TTS: ' . json_encode($response['error']));
                 return;
             }
-            log::add('ai_connector', 'info', 'TTS: Audio généré, fichier: ' . $audioFile . ', taille: ' . $bytesWritten . ' bytes');
-            // Play the audio
-            if (!file_exists('/usr/bin/mpg123')) {
-                log::add('ai_connector', 'error', 'TTS: mpg123 non trouvé à /usr/bin/mpg123');
-                return;
+            
+            if (isset($response['audioContent'])) {
+                $audioData = base64_decode($response['audioContent']);
+                $audioFile = '/tmp/ai_tts.mp3';
+                $bytesWritten = file_put_contents($audioFile, $audioData);
+                if ($bytesWritten === false) {
+                    log::add('ai_connector', 'error', 'TTS: Échec écriture fichier audio');
+                    return;
+                }
+                
+                // Jouer l'audio avec mpg123
+                if (!file_exists('/usr/bin/mpg123')) {
+                    log::add('ai_connector', 'error', 'TTS: mpg123 non trouvé');
+                    return;
+                }
+                
+                $cmd = "/usr/bin/mpg123 -a " . escapeshellarg($audioDevice) . " " . escapeshellarg($audioFile) . " > /dev/null 2>&1 &";
+                exec($cmd);
+                log::add('ai_connector', 'debug', 'TTS: Audio en cours de lecture');
+            } else {
+                log::add('ai_connector', 'error', 'Erreur réponse TTS Google: structure inconnue');
             }
-            $cmd = "/usr/bin/mpg123 -a " . escapeshellarg($audioDevice) . " " . escapeshellarg($audioFile) . " > /dev/null 2>&1 &";
-            log::add('ai_connector', 'debug', 'TTS: Commande de lecture: ' . $cmd);
-            exec($cmd);
-            log::add('ai_connector', 'debug', 'TTS: Commande mpg123 lancée en arrière-plan');
-        } else {
-            $errorMessage = "Erreur réponse TTS Google (structure inconnue): " . json_encode($response);
-            log::add('ai_connector', 'error', $errorMessage);
-        }
         } catch (Exception $e) {
-            log::add('ai_connector', 'error', 'TTS Exception: ' . $e->getMessage() . ' - Trace: ' . $e->getTraceAsString());
+            log::add('ai_connector', 'error', 'TTS Exception: ' . $e->getMessage());
         }
-        log::add('ai_connector', 'warning', 'TTS: speakWithGoogleTTS TERMINÉE');
     }
 } // <--- L'accolade de fin de classe doit être ICI
 
@@ -429,22 +421,15 @@ class ai_connectorCmd extends cmd {
 
         // Si TTS activé, parler la réponse
         if ($eqLogic->getConfiguration('tts_enable', 0) == 1) {
-            log::add('ai_connector', 'debug', 'TTS activé, génération audio pour la réponse');
             $googleApiKey = $eqLogic->getConfiguration('google_api_key');
             $ttsLanguage = $eqLogic->getConfiguration('tts_language', 'fr-FR');
             $ttsVoice = $eqLogic->getConfiguration('tts_voice', 'fr-FR-Neural2-A');
             $ttsAudioDevice = $eqLogic->getConfiguration('tts_audio_device', 'hw:0,0');
-            log::add('ai_connector', 'debug', 'TTS Config: apiKey=' . (!empty($googleApiKey) ? 'ok' : 'vide') . ', lang=' . $ttsLanguage . ', voice=' . $ttsVoice . ', device=' . $ttsAudioDevice);
-            log::add('ai_connector', 'warning', 'TTS: JUSTE AVANT appel speakWithGoogleTTS');
             try {
-                log::add('ai_connector', 'warning', 'TTS: DANS le try, avant appel');
                 $eqLogic->speakWithGoogleTTS($response, $googleApiKey, $ttsLanguage, $ttsVoice, $ttsAudioDevice);
-                log::add('ai_connector', 'warning', 'TTS: APRES appel speakWithGoogleTTS');
             } catch (Exception $e) {
-                log::add('ai_connector', 'error', 'TTS: Exception lors de speakWithGoogleTTS: ' . $e->getMessage());
+                log::add('ai_connector', 'error', 'TTS Exception: ' . $e->getMessage());
             }
-        } else {
-            log::add('ai_connector', 'debug', 'TTS désactivé');
         }
     }
 }
