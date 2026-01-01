@@ -151,6 +151,51 @@ $eqLogics = eqLogic::byType('ai_connector');
                                 <textarea class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="prompt" rows="5" placeholder="{{Décrivez le comportement de l'IA, par exemple : 'Tu es un assistant domotique utile. Réponds de manière concise.'}}"></textarea>
                             </div>
                         </div>
+
+                        <br>
+                        <legend><i class="fas fa-microphone"></i> {{Configuration STT (Speech-to-Text)}}</legend>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">{{Moteur STT}}</label>
+                            <div class="col-sm-3">
+                                <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="stt_engine">
+                                    <option value="whisper">{{Whisper (local)}}</option>
+                                    <option value="google">{{Google Cloud}}</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">{{Clé API Google STT/TTS}}</label>
+                            <div class="col-sm-5">
+                                <input type="password" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="google_api_key" placeholder="{{Votre clé API Google Cloud}}"/>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">{{Langue STT}}</label>
+                            <div class="col-sm-3">
+                                <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="stt_language" placeholder="fr-FR"/>
+                            </div>
+                        </div>
+
+                        <br>
+                        <legend><i class="fas fa-volume-up"></i> {{Configuration TTS (Text-to-Speech)}}</legend>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">{{Activer le TTS}}</label>
+                            <div class="col-sm-3">
+                                <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="configuration" data-l2key="tts_enable" />{{Activer}}</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">{{Langue TTS}}</label>
+                            <div class="col-sm-3">
+                                <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="tts_language" placeholder="fr-FR"/>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">{{Voix TTS}}</label>
+                            <div class="col-sm-3">
+                                <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="tts_voice" placeholder="fr-FR-Neural2-A"/>
+                            </div>
+                        </div>
                     </fieldset>
                 </form>
             </div>

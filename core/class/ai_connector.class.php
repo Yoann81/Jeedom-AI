@@ -51,6 +51,9 @@ class ai_connector extends eqLogic {
         $porcupineEnable = $listeningEqLogic->getConfiguration('porcupine_enable', 0);
         $porcupineAccessKey = $listeningEqLogic->getConfiguration('porcupine_access_key', '');
         $porcupineWakewordNames = $listeningEqLogic->getConfiguration('porcupine_wakeword_names', '');
+        $sttEngine = $listeningEqLogic->getConfiguration('stt_engine', 'whisper');
+        $googleApiKey = $listeningEqLogic->getConfiguration('google_api_key', '');
+        $sttLanguage = $listeningEqLogic->getConfiguration('stt_language', 'fr-FR');
         
         if (empty($cmdId)) {
             log::add('ai_connector', 'error', 'ID de commande de retour (HP) non configuré pour l\'équipement d\'écoute (' . $listeningEqLogic->getHumanName() . ').');
@@ -68,7 +71,7 @@ class ai_connector extends eqLogic {
         touch($log_file);
         chown($log_file, 'www-data');
 
-        $cmd = "nohup /var/www/html/plugins/ai_connector/resources/python_venv/bin/python3 " . escapeshellarg($path) . " --apikey " . escapeshellarg($apikey) . " --cmd_id " . escapeshellarg($cmdId) . " --device_id " . escapeshellarg($deviceId);
+        $cmd = "nohup /var/www/html/plugins/ai_connector/resources/python_venv/bin/python3 " . escapeshellarg($path) . " --apikey " . escapeshellarg($apikey) . " --cmd_id " . escapeshellarg($cmdId) . " --device_id " . escapeshellarg($deviceId) . " --stt_engine " . escapeshellarg($sttEngine) . " --google_api_key " . escapeshellarg($googleApiKey) . " --stt_language " . escapeshellarg($sttLanguage);
         
         if ($porcupineEnable) {
             if (empty($porcupineAccessKey)) {
@@ -257,6 +260,35 @@ class ai_connector extends eqLogic {
         curl_close($ch);
         return json_decode($rawResponse, true);
     }
+
+    private function speakWithGoogleTTS($text, $apiKey, $language, $voice) {
+        if (empty($apiKey) || empty($text)) {
+            return;
+        }
+
+        $url = "https://texttospeech.googleapis.com/v1/text:synthesize?key=" . $apiKey;
+        $data = [
+            "input" => ["text" => $text],
+            "voice" => [
+                "languageCode" => $language ?: "fr-FR",
+                "name" => $voice ?: "fr-FR-Neural2-A"
+            ],
+            "audioConfig" => [
+                "audioEncoding" => "MP3"
+            ]
+        ];
+
+        $response = $this->sendCurl($url, $data);
+        if (isset($response['audioContent'])) {
+            $audioData = base64_decode($response['audioContent']);
+            $audioFile = '/tmp/ai_tts.mp3';
+            file_put_contents($audioFile, $audioData);
+            // Play the audio
+            exec("mpg123 " . escapeshellarg($audioFile) . " > /dev/null 2>&1 &");
+        } else {
+            log::add('ai_connector', 'error', 'Erreur TTS Google: ' . json_encode($response));
+        }
+    }
 } // <--- L'accolade de fin de classe doit être ICI
 
 class ai_connectorCmd extends cmd {
@@ -273,5 +305,13 @@ class ai_connectorCmd extends cmd {
 
         // Mettre à jour la commande 'reponse' avec le résultat
         $eqLogic->checkAndUpdateCmd('reponse', $response);
+
+        // Si TTS activé, parler la réponse
+        if ($eqLogic->getConfiguration('tts_enable', 0) == 1) {
+            $googleApiKey = $eqLogic->getConfiguration('google_api_key');
+            $ttsLanguage = $eqLogic->getConfiguration('tts_language', 'fr-FR');
+            $ttsVoice = $eqLogic->getConfiguration('tts_voice', 'fr-FR-Neural2-A');
+            $eqLogic->speakWithGoogleTTS($response, $googleApiKey, $ttsLanguage, $ttsVoice);
+        }
     }
 }

@@ -25,6 +25,12 @@
   "parameters": {
     "voice_enable": "0",
     "voice_cmd_id": "",
-    "voice_device_id": "1"
+    "voice_device_id": "1",
+    "stt_engine": "whisper",
+    "google_api_key": "",
+    "stt_language": "fr-FR",
+    "tts_enable": "0",
+    "tts_language": "fr-FR",
+    "tts_voice": "fr-FR-Neural2-A"
   }
 }

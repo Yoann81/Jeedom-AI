@@ -56,7 +56,7 @@ Action : #[Salon][Mon IA][Poser une question]#
 Message : "La température extérieure est de #[Extérieur][Sonde][Température]#°C. Donne-moi un conseil vestimentaire court pour sortir."
 
 Récupération de la réponse
-La réponse est instantanément stockée dans la commande #[Salon][Mon IA][Dernière réponse]#. Vous pouvez l'utiliser dans un bloc d'action suivant pour l'envoyer par SMS, Telegram ou via une synthèse vocale (TTS).
+La réponse est instantanément stockée dans la commande #[Salon][Mon IA][Dernière réponse]#. Vous pouvez l'utiliser dans un bloc d'action suivant pour l'envoyer par SMS, Telegram ou via une synthèse vocale (TTS). Le plugin supporte également le TTS intégré avec Google Text-to-Speech pour lire la réponse à voix haute, et le STT avec Google Speech-to-Text ou Whisper local.
 
 🛠 Maintenance et Logs
 En cas de souci de connexion avec une API, consultez les logs du plugin : Analyse > Logs > ai_connector.

@@ -11,7 +11,7 @@ cd "$BASE_PATH"
 echo "--- Début de l'installation des dépendances de AI Connector ---"
 
 echo "Installation des librairies systeme audio..."
-sudo apt-get install -y libportaudio2 libportaudiocpp0 portaudio19-dev python3-pyaudio wget
+sudo apt-get install -y libportaudio2 libportaudiocpp0 portaudio19-dev python3-pyaudio wget mpg123
 echo "Nettoyage des serveurs audio inutiles (JACK)..."
 sudo apt-get remove --purge -y jackd2 jackd libjack-jackd2-0
 sudo apt-get autoremove -y

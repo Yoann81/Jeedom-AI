@@ -8,6 +8,7 @@ import argparse
 import struct
 import pyaudio
 import wave # Import wave module for saving WAV files
+import base64
 from urllib.parse import quote
 import datetime
 import sys
@@ -133,7 +134,7 @@ def send_to_jeedom(text, api_key, cmd_id):
     except requests.exceptions.RequestException as e:
         log(f"Erreur d'envoi Jeedom : {e}")
 
-def transcribe_and_send(api_key, cmd_id):
+def transcribe_and_send(api_key, cmd_id, stt_engine="whisper", google_api_key="", stt_language="fr-FR"):
     """Transcrit l'audio et envoie le texte à Jeedom."""
     if not os.path.exists(TEMP_WAVE):
         log("Erreur : Le fichier audio n'a pas été créé pour la transcription.")
@@ -141,33 +142,54 @@ def transcribe_and_send(api_key, cmd_id):
         
     log("Démon AI Multi-Connect : Transcription audio...")
     try:
-        cmd = [WHISPER_PATH, "-m", MODEL_PATH, "-f", TEMP_WAVE, "-nt", "-l", "fr"]
-        
-        # Capture stdout for transcription, stderr for diagnostics
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        stdout, stderr = process.communicate()
-        
-        if process.returncode != 0:
-            log(f"Erreur fatale whisper (code {process.returncode}) : {stderr}")
-            return False # On sort proprement sans faire planter le python
-        
-        text = stdout.strip() # Only take stdout for the transcription
+        if stt_engine == "google" and google_api_key:
+            # Use Google STT
+            with open(TEMP_WAVE, "rb") as audio_file:
+                audio_content = audio_file.read()
+            audio_base64 = base64.b64encode(audio_content).decode('utf-8')
+            
+            url = f"https://speech.googleapis.com/v1/speech:recognize?key={google_api_key}"
+            data = {
+                "config": {
+                    "encoding": "LINEAR16",
+                    "sampleRateHertz": 16000,
+                    "languageCode": stt_language
+                },
+                "audio": {
+                    "content": audio_base64
+                }
+            }
+            response = requests.post(url, json=data, timeout=30)
+            response.raise_for_status()
+            result = response.json()
+            text = result.get('results', [{}])[0].get('alternatives', [{}])[0].get('transcript', '')
+        else:
+            # Use Whisper
+            cmd = [WHISPER_PATH, "-m", MODEL_PATH, "-f", TEMP_WAVE, "-nt", "-l", stt_language]
+            
+            # Capture stdout for transcription, stderr for diagnostics
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            stdout, stderr = process.communicate()
+            
+            if process.returncode != 0:
+                log(f"Erreur fatale whisper (code {process.returncode}) : {stderr}")
+                return False # On sort proprement sans faire planter le python
+            
+            text = stdout.strip() # Only take stdout for the transcription
 
-        # Log any stderr from whisper-cli separately
-        if stderr:
-            log(f"Whisper CLI stderr: {stderr.strip()}")
+            # Log any stderr from whisper-cli separately
+            if stderr:
+                log(f"Whisper CLI stderr: {stderr.strip()}")
 
         log(f"Démon AI Multi-Connect : Texte transcrit : '{text}'")
         if text:
             send_to_jeedom(text, api_key, cmd_id)
         return True
-    except subprocess.CalledProcessError as e:
-        log(f"Erreur de transcription Whisper : {e.output.decode('utf-8', errors='ignore')}")
     except Exception as e:
-        log(f"Erreur technique inattendue lors de la transcription : {e}")
+        log(f"Erreur de transcription : {e}")
     return False
 
-def listen_periodic(device_id, api_key, cmd_id):
+def listen_periodic(device_id, api_key, cmd_id, stt_engine="whisper", google_api_key="", stt_language="fr-FR"):
     """Boucle principale d'écoute et de transcription périodique."""
     log(f"Démon AI Multi-Connect démarré en mode périodique sur hw:{device_id},0")
     
@@ -192,11 +214,11 @@ def listen_periodic(device_id, api_key, cmd_id):
             time.sleep(2)
             continue
             
-        transcribe_and_send(api_key, cmd_id)
+        transcribe_and_send(api_key, cmd_id, stt_engine, google_api_key, stt_language)
         time.sleep(0.1) # Small delay to prevent 100% CPU usage
 
 
-def listen_wakeword(device_id, api_key, cmd_id, porcupine_access_key, porcupine_wakeword_names):
+def listen_wakeword(device_id, api_key, cmd_id, porcupine_access_key, porcupine_wakeword_names, stt_engine="whisper", google_api_key="", stt_language="fr-FR"):
     """Boucle d'écoute avec détection de wakeword Porcupine."""
     if not PORCUPINE_AVAILABLE:
         log("Erreur : Picovoice Porcupine n'est pas disponible. Le mode Wakeword est désactivé.")
@@ -269,7 +291,7 @@ def listen_wakeword(device_id, api_key, cmd_id, porcupine_access_key, porcupine_
                     wf.close()
                     
                     command_audio_buffer = [] # Clear buffer
-                    transcribe_and_send(api_key, cmd_id)
+                    transcribe_and_send(api_key, cmd_id, stt_engine, google_api_key, stt_language)
             else:
                 keyword_index = porcupine_instance.process(pcm_data)
                 if keyword_index >= 0:
@@ -294,9 +316,9 @@ if __name__ == "__main__":
     parser.add_argument("--apikey", required=True, help="Clé API Jeedom Core.")
     parser.add_argument("--cmd_id", required=True, help="ID de la commande Jeedom pour envoyer le texte.")
     parser.add_argument("--device_id", default="1", help="ID du périphérique d'enregistrement audio (par défaut: 1).")
-    parser.add_argument("--porcupine_enable", type=int, default=0, help="Activer la détection de wakeword Picovoice.")
-    parser.add_argument("--porcupine_access_key", default="", help="Clé d'accès Picovoice pour le wakeword.")
-    parser.add_argument("--porcupine_wakeword_names", default="picovoice", help="Liste des noms de wakewords Picovoice par défaut (séparés par des virgules).")
+    parser.add_argument("--stt_engine", default="whisper", help="Moteur STT : whisper ou google.")
+    parser.add_argument("--google_api_key", default="", help="Clé API Google pour STT/TTS.")
+    parser.add_argument("--stt_language", default="fr-FR", help="Langue pour STT.")
     args = parser.parse_args()
 
     # --- Boilerplate de démon Jeedom ---
@@ -316,15 +338,15 @@ if __name__ == "__main__":
             log("Démon AI Multi-Connect : Mode Wakeword Picovoice activé.")
             if not PORCUPINE_AVAILABLE:
                 log("Erreur : Picovoice Porcupine n'est pas disponible. Veuillez l'installer. Rebasculement en mode périodique.", file=sys.stderr)
-                listen_periodic(args.device_id, args.apikey, args.cmd_id)
+                listen_periodic(args.device_id, args.apikey, args.cmd_id, args.stt_engine, args.google_api_key, args.stt_language)
             elif not args.porcupine_access_key:
                 log("Erreur : Clé d'accès Picovoice manquante. Rebasculement en mode périodique.", file=sys.stderr)
-                listen_periodic(args.device_id, args.apikey, args.cmd_id)
+                listen_periodic(args.device_id, args.apikey, args.cmd_id, args.stt_engine, args.google_api_key, args.stt_language)
             else:
-                listen_wakeword(args.device_id, args.apikey, args.cmd_id, args.porcupine_access_key, args.porcupine_wakeword_names)
+                listen_wakeword(args.device_id, args.apikey, args.cmd_id, args.porcupine_access_key, args.porcupine_wakeword_names, args.stt_engine, args.google_api_key, args.stt_language)
         else:
             log("Démon AI Multi-Connect : Mode d'écoute périodique activé (sans wakeword).")
-            listen_periodic(args.device_id, args.apikey, args.cmd_id)
+            listen_periodic(args.device_id, args.apikey, args.cmd_id, args.stt_engine, args.google_api_key, args.stt_language)
     except Exception as e:
         log(f"Erreur majeure dans la boucle principale : {e}", file=sys.stderr)
     finally:
