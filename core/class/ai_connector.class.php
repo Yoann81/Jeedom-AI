@@ -263,8 +263,11 @@ class ai_connector extends eqLogic {
 
     private function speakWithGoogleTTS($text, $apiKey, $language, $voice) {
         if (empty($apiKey) || empty($text)) {
+            log::add('ai_connector', 'warning', 'TTS: Clé API ou texte vide');
             return;
         }
+
+        log::add('ai_connector', 'info', 'TTS: Génération audio pour texte: ' . substr($text, 0, 50) . '...');
 
         $url = "https://texttospeech.googleapis.com/v1/text:synthesize?key=" . $apiKey;
         $data = [
@@ -283,8 +286,12 @@ class ai_connector extends eqLogic {
             $audioData = base64_decode($response['audioContent']);
             $audioFile = '/tmp/ai_tts.mp3';
             file_put_contents($audioFile, $audioData);
+            log::add('ai_connector', 'info', 'TTS: Audio généré, fichier: ' . $audioFile . ', taille: ' . strlen($audioData) . ' bytes');
             // Play the audio
-            exec("mpg123 " . escapeshellarg($audioFile) . " > /dev/null 2>&1 &");
+            $cmd = "mpg123 " . escapeshellarg($audioFile) . " > /dev/null 2>&1 &";
+            log::add('ai_connector', 'debug', 'TTS: Commande de lecture: ' . $cmd);
+            exec($cmd);
+            log::add('ai_connector', 'info', 'TTS: Commande exécutée');
         } else {
             log::add('ai_connector', 'error', 'Erreur TTS Google: ' . json_encode($response));
         }
@@ -308,10 +315,13 @@ class ai_connectorCmd extends cmd {
 
         // Si TTS activé, parler la réponse
         if ($eqLogic->getConfiguration('tts_enable', 0) == 1) {
+            log::add('ai_connector', 'info', 'TTS activé, génération audio pour la réponse');
             $googleApiKey = $eqLogic->getConfiguration('google_api_key');
             $ttsLanguage = $eqLogic->getConfiguration('tts_language', 'fr-FR');
             $ttsVoice = $eqLogic->getConfiguration('tts_voice', 'fr-FR-Neural2-A');
             $eqLogic->speakWithGoogleTTS($response, $googleApiKey, $ttsLanguage, $ttsVoice);
+        } else {
+            log::add('ai_connector', 'info', 'TTS désactivé');
         }
     }
 }
