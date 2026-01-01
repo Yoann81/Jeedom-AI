@@ -316,6 +316,22 @@ class ai_connectorCmd extends cmd {
         }
         
         $prompt = $_options['message'] ?? '';
+        
+        // Éviter les boucles : vérifier si le même prompt a été traité récemment
+        $cache_key = 'ai_connector_last_prompt_' . $eqLogic->getId();
+        $last_prompt = cache::byKey($cache_key)->getValue('');
+        $last_time = cache::byKey($cache_key . '_time')->getValue(0);
+        $current_time = time();
+        
+        if ($prompt === $last_prompt && ($current_time - $last_time) < 10) { // 10 secondes
+            log::add('ai_connector', 'warning', 'Prompt dupliqué ignoré pour éviter la boucle: ' . $prompt);
+            return;
+        }
+        
+        // Mettre à jour le cache
+        cache::set($cache_key, $prompt, 300); // 5 minutes
+        cache::set($cache_key . '_time', $current_time, 300);
+        
         log::add('ai_connector', 'info', 'Exécution commande avec prompt: ' . $prompt);
 
         // Appeler la nouvelle méthode publique sur l'équipement parent
