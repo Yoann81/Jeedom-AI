@@ -262,10 +262,12 @@ class ai_connector extends eqLogic {
     }
 
     private function speakWithGoogleTTS($text, $apiKey, $language, $voice, $audioDevice = 'hw:0,0') {
-        if (empty($apiKey) || empty($text)) {
-            log::add('ai_connector', 'warning', 'TTS: Clé API ou texte vide');
-            return;
-        }
+        try {
+            log::add('ai_connector', 'debug', 'TTS: Démarrage génération audio, apiKey présent: ' . (!empty($apiKey) ? 'oui' : 'non') . ', texte longueur: ' . strlen($text));
+            if (empty($apiKey) || empty($text)) {
+                log::add('ai_connector', 'warning', 'TTS: Clé API ou texte vide');
+                return;
+            }
 
         // Tronquer le texte à 4000 caractères pour respecter la limite Google TTS
         $text = substr($text, 0, 4000);
@@ -305,6 +307,9 @@ class ai_connector extends eqLogic {
         } else {
             log::add('ai_connector', 'error', 'Erreur TTS Google: ' . json_encode($response));
         }
+        } catch (Exception $e) {
+            log::add('ai_connector', 'error', 'Exception TTS: ' . $e->getMessage());
+        }
     }
 } // <--- L'accolade de fin de classe doit être ICI
 
@@ -318,9 +323,9 @@ class ai_connectorCmd extends cmd {
         $prompt = $_options['message'] ?? '';
         
         // Éviter les boucles : vérifier si le même prompt a été traité récemment
-        // Pour les appels manuels, être moins restrictif (2 secondes au lieu de 10)
+        // Pour les appels manuels, être moins restrictif (30 secondes au lieu de 2 pour éviter les boucles)
         $is_manual_call = !isset($_options['source']) || $_options['source'] !== 'stt_daemon';
-        $timeout_seconds = $is_manual_call ? 2 : 10; // 2s pour manuel, 10s pour STT
+        $timeout_seconds = $is_manual_call ? 30 : 10; // 30s pour manuel, 10s pour STT
         
         $cache_key = 'ai_connector_last_prompt_' . $eqLogic->getId();
         $last_prompt = cache::byKey($cache_key)->getValue('');
