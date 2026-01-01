@@ -319,7 +319,7 @@ class ai_connector extends eqLogic {
         return $defaultDevice;
     }
 
-    private function speakWithGoogleTTS($text, $apiKey, $language, $voice, $audioDevice = 'hw:0,0') {
+    public function speakWithGoogleTTS($text, $apiKey, $language, $voice, $audioDevice = 'hw:0,0') {
         log::add('ai_connector', 'error', 'TTS METHOD ENTRY - text length: ' . strlen($text) . ', apiKey empty: ' . (empty($apiKey) ? 'yes' : 'no'));
         log::add('ai_connector', 'warning', 'TTS: speakWithGoogleTTS APPELÉE');
         try {
