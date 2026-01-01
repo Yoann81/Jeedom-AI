@@ -319,6 +319,9 @@ if __name__ == "__main__":
     parser.add_argument("--stt_engine", default="whisper", help="Moteur STT : whisper ou google.")
     parser.add_argument("--google_api_key", default="", help="Clé API Google pour STT/TTS.")
     parser.add_argument("--stt_language", default="fr-FR", help="Langue pour STT.")
+    parser.add_argument("--porcupine_enable", type=int, default=0, help="Activer la détection de wakeword Picovoice.")
+    parser.add_argument("--porcupine_access_key", default="", help="Clé d'accès Picovoice pour le wakeword.")
+    parser.add_argument("--porcupine_wakeword_names", default="picovoice", help="Liste des noms de wakewords Picovoice par défaut (séparés par des virgules).")
     args = parser.parse_args()
 
     # --- Boilerplate de démon Jeedom ---
