@@ -267,7 +267,9 @@ class ai_connector extends eqLogic {
             return;
         }
 
-        log::add('ai_connector', 'info', 'TTS: Génération audio pour texte: ' . substr($text, 0, 50) . '...');
+        // Tronquer le texte à 4000 caractères pour respecter la limite Google TTS
+        $text = substr($text, 0, 4000);
+        log::add('ai_connector', 'info', 'TTS: Génération audio pour texte tronqué: ' . substr($text, 0, 50) . '...');
 
         $url = "https://texttospeech.googleapis.com/v1/text:synthesize?key=" . $apiKey;
         $data = [
