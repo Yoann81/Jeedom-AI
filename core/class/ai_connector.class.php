@@ -296,15 +296,10 @@ class ai_connector extends eqLogic {
                 log::add('ai_connector', 'error', 'TTS: mpg123 non trouvé à /usr/bin/mpg123');
                 return;
             }
-            $cmd = "/usr/bin/mpg123 " . escapeshellarg($audioFile) . " 2>&1";
+            $cmd = "/usr/bin/mpg123 " . escapeshellarg($audioFile) . " > /dev/null 2>&1 &";
             log::add('ai_connector', 'debug', 'TTS: Commande de lecture: ' . $cmd);
-            $output = array();
-            $return_var = 0;
-            exec($cmd, $output, $return_var);
-            log::add('ai_connector', 'info', 'TTS: mpg123 return code: ' . $return_var);
-            if (!empty($output)) {
-                log::add('ai_connector', 'info', 'TTS: mpg123 output: ' . implode(' ', $output));
-            }
+            exec($cmd);
+            log::add('ai_connector', 'debug', 'TTS: Commande mpg123 lancée en arrière-plan');
         } else {
             log::add('ai_connector', 'error', 'Erreur TTS Google: ' . json_encode($response));
         }
@@ -326,23 +321,18 @@ class ai_connectorCmd extends cmd {
         log::add('ai_connector', 'info', 'Réponse IA: ' . $response);
 
         // Mettre à jour la commande 'reponse' avec le résultat
-        $cmd = $eqLogic->getCmd(null, 'reponse');
-        if (is_object($cmd)) {
-            $cmd->event($response);
-            log::add('ai_connector', 'info', 'Commande réponse mise à jour');
-        } else {
-            log::add('ai_connector', 'error', 'Commande réponse introuvable');
-        }
+        $eqLogic->checkAndUpdateCmd('reponse', $response);
+        log::add('ai_connector', 'debug', 'Commande réponse mise à jour avec: ' . substr($response, 0, 50));
 
         // Si TTS activé, parler la réponse
         if ($eqLogic->getConfiguration('tts_enable', 0) == 1) {
-            log::add('ai_connector', 'info', 'TTS activé, génération audio pour la réponse');
+            log::add('ai_connector', 'debug', 'TTS activé, génération audio pour la réponse');
             $googleApiKey = $eqLogic->getConfiguration('google_api_key');
             $ttsLanguage = $eqLogic->getConfiguration('tts_language', 'fr-FR');
             $ttsVoice = $eqLogic->getConfiguration('tts_voice', 'fr-FR-Neural2-A');
             $eqLogic->speakWithGoogleTTS($response, $googleApiKey, $ttsLanguage, $ttsVoice);
         } else {
-            log::add('ai_connector', 'info', 'TTS désactivé');
+            log::add('ai_connector', 'debug', 'TTS désactivé');
         }
     }
 }
