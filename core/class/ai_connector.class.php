@@ -285,10 +285,14 @@ class ai_connector extends eqLogic {
         if (isset($response['audioContent'])) {
             $audioData = base64_decode($response['audioContent']);
             $audioFile = '/tmp/ai_tts.mp3';
-            file_put_contents($audioFile, $audioData);
-            log::add('ai_connector', 'info', 'TTS: Audio généré, fichier: ' . $audioFile . ', taille: ' . strlen($audioData) . ' bytes');
+            $bytesWritten = file_put_contents($audioFile, $audioData);
+            if ($bytesWritten === false) {
+                log::add('ai_connector', 'error', 'TTS: Échec écriture fichier audio');
+                return;
+            }
+            log::add('ai_connector', 'info', 'TTS: Audio généré, fichier: ' . $audioFile . ', taille: ' . $bytesWritten . ' bytes');
             // Play the audio
-            $cmd = "mpg123 " . escapeshellarg($audioFile) . " > /dev/null 2>&1 &";
+            $cmd = "/usr/bin/mpg123 " . escapeshellarg($audioFile) . " > /dev/null 2>&1 &";
             log::add('ai_connector', 'debug', 'TTS: Commande de lecture: ' . $cmd);
             $output = array();
             $return_var = 0;
