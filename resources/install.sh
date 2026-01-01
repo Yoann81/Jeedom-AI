@@ -20,8 +20,16 @@ sudo apt-get install -y \
     libasound2-dev
 
 echo "Nettoyage des serveurs audio inutiles (JACK)..."
-sudo apt-get remove --purge -y jackd2 jackd libjack-jackd2-0 || true
+# Supprimer JACK SANS supprimer ses dépendances
+sudo apt-get remove -y jackd2 jackd || true
+# Garder les dépendances mais pas le serveur complet
 sudo apt-get autoremove -y
+
+# Réinstaller les packages qui pourraient avoir été supprimés accidentellement
+echo "Vérification et réinstallation des dépendances critiques..."
+sudo apt-get install -y \
+    libportaudio2 python3-pyaudio mpg123 ffmpeg \
+    || true
 
 # 4. Téléchargement du modèle de langue léger (TINY)
 echo "Configuration du modèle Whisper..."
