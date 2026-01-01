@@ -316,12 +316,20 @@ class ai_connectorCmd extends cmd {
         }
         
         $prompt = $_options['message'] ?? '';
+        log::add('ai_connector', 'info', 'Exécution commande avec prompt: ' . $prompt);
 
         // Appeler la nouvelle méthode publique sur l'équipement parent
         $response = $eqLogic->processMessage($prompt);
+        log::add('ai_connector', 'info', 'Réponse IA: ' . $response);
 
         // Mettre à jour la commande 'reponse' avec le résultat
-        $eqLogic->checkAndUpdateCmd('reponse', $response);
+        $cmd = $eqLogic->getCmd(null, 'reponse');
+        if (is_object($cmd)) {
+            $cmd->event($response);
+            log::add('ai_connector', 'info', 'Commande réponse mise à jour');
+        } else {
+            log::add('ai_connector', 'error', 'Commande réponse introuvable');
+        }
 
         // Si TTS activé, parler la réponse
         if ($eqLogic->getConfiguration('tts_enable', 0) == 1) {
