@@ -305,7 +305,7 @@ def listen_wakeword(device_id, api_key, cmd_id, porcupine_access_key, porcupine_
                 keyword_index = porcupine_instance.process(pcm_data)
                 if keyword_index >= 0:
                     log(f"Démon AI Multi-Connect : Wakeword détecté !!!")
-                    play_notification_sound()
+                    # play_notification_sound()  # Commented out to avoid recording the beep
                     is_recording_command = True
                     command_audio_buffer = [] # Start fresh recording after wakeword
                     log("Démon AI Multi-Connect : Début d'enregistrement de la commande vocale...")
