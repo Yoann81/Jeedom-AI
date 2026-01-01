@@ -277,7 +277,7 @@ def listen_wakeword(device_id, api_key, cmd_id, porcupine_access_key, porcupine_
         command_audio_buffer = []
         is_recording_command = False
         # Let's simplify: record for a fixed time after wakeword
-        RECORD_COMMAND_FRAMES = porcupine_instance.sample_rate // porcupine_instance.frame_length * 3 # Record for 3 seconds after wakeword
+        RECORD_COMMAND_FRAMES = porcupine_instance.sample_rate // porcupine_instance.frame_length * 5 # Record for 5 seconds after wakeword
 
         while True:
             pcm = audio_stream.read(porcupine_instance.frame_length, exception_on_overflow=False)
@@ -301,12 +301,13 @@ def listen_wakeword(device_id, api_key, cmd_id, porcupine_access_key, porcupine_
                     
                     command_audio_buffer = [] # Clear buffer
                     transcribe_and_send(api_key, cmd_id, stt_engine, google_api_key, stt_language)
-                    play_notification_sound()  # Play sound after processing
+                    # play_notification_sound()  # Already played before
             else:
                 keyword_index = porcupine_instance.process(pcm_data)
                 if keyword_index >= 0:
                     log(f"Démon AI Multi-Connect : Wakeword détecté !!!")
-                    # play_notification_sound()  # Commented out to avoid recording the beep
+                    play_notification_sound()  # Play sound to indicate listening
+                    time.sleep(0.5)  # Short delay before recording
                     is_recording_command = True
                     command_audio_buffer = [] # Start fresh recording after wakeword
                     log("Démon AI Multi-Connect : Début d'enregistrement de la commande vocale...")
