@@ -320,6 +320,7 @@ class ai_connector extends eqLogic {
     }
 
     private function speakWithGoogleTTS($text, $apiKey, $language, $voice, $audioDevice = 'hw:0,0') {
+        log::add('ai_connector', 'error', 'TTS METHOD ENTRY - text length: ' . strlen($text) . ', apiKey empty: ' . (empty($apiKey) ? 'yes' : 'no'));
         log::add('ai_connector', 'warning', 'TTS: speakWithGoogleTTS APPELÉE');
         try {
             log::add('ai_connector', 'debug', 'TTS: Démarrage speakWithGoogleTTS, texte longueur=' . strlen($text));
