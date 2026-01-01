@@ -301,6 +301,7 @@ def listen_wakeword(device_id, api_key, cmd_id, porcupine_access_key, porcupine_
                     
                     command_audio_buffer = [] # Clear buffer
                     transcribe_and_send(api_key, cmd_id, stt_engine, google_api_key, stt_language)
+                    play_notification_sound()  # Play sound after processing
             else:
                 keyword_index = porcupine_instance.process(pcm_data)
                 if keyword_index >= 0:
