@@ -432,9 +432,11 @@ class ai_connectorCmd extends cmd {
             $ttsVoice = $eqLogic->getConfiguration('tts_voice', 'fr-FR-Neural2-A');
             $ttsAudioDevice = $eqLogic->getConfiguration('tts_audio_device', 'hw:0,0');
             log::add('ai_connector', 'debug', 'TTS Config: apiKey=' . (!empty($googleApiKey) ? 'ok' : 'vide') . ', lang=' . $ttsLanguage . ', voice=' . $ttsVoice . ', device=' . $ttsAudioDevice);
+            log::add('ai_connector', 'warning', 'TTS: JUSTE AVANT appel speakWithGoogleTTS');
             try {
+                log::add('ai_connector', 'warning', 'TTS: DANS le try, avant appel');
                 $eqLogic->speakWithGoogleTTS($response, $googleApiKey, $ttsLanguage, $ttsVoice, $ttsAudioDevice);
-                log::add('ai_connector', 'debug', 'TTS: Appel speakWithGoogleTTS complété');
+                log::add('ai_connector', 'warning', 'TTS: APRES appel speakWithGoogleTTS');
             } catch (Exception $e) {
                 log::add('ai_connector', 'error', 'TTS: Exception lors de speakWithGoogleTTS: ' . $e->getMessage());
             }
