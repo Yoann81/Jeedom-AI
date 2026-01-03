@@ -3,9 +3,6 @@
  * Plugin AI Multi-Connect pour Jeedom
  */
 
-// Charge les fonctions de vérification des dépendances et du démon
-require_once dirname(__FILE__) . '/../php/ai_connector.inc.php';
-
 class ai_connector extends eqLogic {
 
     /**
@@ -29,11 +26,43 @@ class ai_connector extends eqLogic {
     }
 
     public static function deamon_info() {
-        return ai_connector_deamon_info();
+        $return = array();
+        $return['log'] = 'ai_connector_daemon';
+        $return['state'] = 'nok';
+        $return['launchable'] = 'ok';
+        
+        $pidFile = '/tmp/jeedom/ai_connector/daemon.pid';
+        if (file_exists($pidFile)) {
+            $pid = trim(file_get_contents($pidFile));
+            if (!empty($pid) && is_numeric($pid)) {
+                if (function_exists('posix_getpgid')) {
+                    if (@posix_getpgid($pid) !== false) {
+                        $return['state'] = 'ok';
+                    }
+                } else {
+                    $return['state'] = 'ok';
+                }
+            }
+        }
+        return $return;
     }
 
     public static function dependancy_info() {
-        return ai_connector_dependancy_info();
+        $return = array();
+        
+        $progressFile = dirname(__FILE__) . '/../../tmp/ai_connector_dep_in_progress';
+        if (file_exists($progressFile)) {
+            $return['state'] = 'in_progress';
+        } else {
+            $daemonPath = dirname(__FILE__) . '/../../resources/demond/ai_connector_daemon.py';
+            if (file_exists($daemonPath)) {
+                $return['state'] = 'ok';
+            } else {
+                $return['state'] = 'nok';
+            }
+        }
+        
+        return $return;
     }
 
     public static function deamon_start() {
