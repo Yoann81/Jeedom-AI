@@ -175,15 +175,16 @@ class ai_connector extends eqLogic {
                     $humanName = $eq->getName();
                 }
                 
+                // S'assurer que les valeurs sont des strings ou des nombres, pas null/array
                 $equipments[] = [
-                    'id' => $eq->getId(),
-                    'name' => $eq->getName(),
-                    'logicalId' => $eq->getLogicalId(),
-                    'object_id' => $eq->getObject_id(),
-                    'type' => $type,
-                    'humanName' => $humanName,
-                    'isEnable' => $eq->getIsEnable(),
-                    'status' => $eq->getStatus()
+                    'id' => (int)$eq->getId(),
+                    'name' => (string)$eq->getName(),
+                    'logicalId' => (string)($eq->getLogicalId() ?? ''),
+                    'object_id' => (int)($eq->getObject_id() ?? 0),
+                    'type' => (string)$type,
+                    'humanName' => (string)$humanName,
+                    'isEnable' => (bool)$eq->getIsEnable(),
+                    'status' => (string)($eq->getStatus() ?? '')
                 ];
             } catch (Exception $e) {
                 // Ignorer les équipements problématiques et continuer
@@ -216,18 +217,19 @@ class ai_connector extends eqLogic {
                     
                     $cmdValue = '';
                     if ($cmdType === 'info' && method_exists($cmd, 'getLastValue')) {
-                        $cmdValue = $cmd->getLastValue();
+                        $lastVal = $cmd->getLastValue();
+                        $cmdValue = $lastVal !== null ? (string)$lastVal : '';
                     }
                     
                     $commands[] = [
-                        'id' => $cmd->getId(),
-                        'name' => $cmd->getName(),
-                        'logicalId' => $cmd->getLogicalId(),
-                        'type' => $cmdType,
-                        'subType' => method_exists($cmd, 'getSubType') ? $cmd->getSubType() : null,
-                        'isVisible' => method_exists($cmd, 'getIsVisible') ? $cmd->getIsVisible() : true,
-                        'value' => $cmdValue,
-                        'unit' => method_exists($cmd, 'getUnite') ? $cmd->getUnite() : '',
+                        'id' => (int)$cmd->getId(),
+                        'name' => (string)$cmd->getName(),
+                        'logicalId' => (string)($cmd->getLogicalId() ?? ''),
+                        'type' => (string)$cmdType,
+                        'subType' => (string)(method_exists($cmd, 'getSubType') ? ($cmd->getSubType() ?? '') : ''),
+                        'isVisible' => (bool)(method_exists($cmd, 'getIsVisible') ? $cmd->getIsVisible() : true),
+                        'value' => (string)$cmdValue,
+                        'unit' => (string)(method_exists($cmd, 'getUnite') ? ($cmd->getUnite() ?? '') : ''),
                         'minValue' => method_exists($cmd, 'getMinValue') ? $cmd->getMinValue() : null,
                         'maxValue' => method_exists($cmd, 'getMaxValue') ? $cmd->getMaxValue() : null
                     ];

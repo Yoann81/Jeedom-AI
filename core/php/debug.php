@@ -111,7 +111,17 @@ try {
                 echo "\nPremier équipement:\n";
                 $eq = $equipments[0];
                 foreach ($eq as $key => $value) {
-                    echo "  " . $key . ": " . htmlspecialchars($value) . "\n";
+                    // Gérer les valeurs null, array, etc.
+                    if ($value === null) {
+                        $display = "(null)";
+                    } elseif (is_array($value)) {
+                        $display = "(array: " . count($value) . " items)";
+                    } elseif (is_bool($value)) {
+                        $display = $value ? "true" : "false";
+                    } else {
+                        $display = htmlspecialchars((string)$value);
+                    }
+                    echo "  " . $key . ": " . $display . "\n";
                 }
             }
         } else {
