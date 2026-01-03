@@ -45,6 +45,27 @@ class ai_connector extends eqLogic {
         return $return;
     }
 
+    public static function dependancy_info() {
+        $return = array();
+        $return['progress_file'] = dirname(__FILE__) . '/../../tmp/ai_connector_dep_in_progress';
+        
+        // Vérifie si l'installation est en cours
+        if (file_exists($return['progress_file'])) {
+            $return['state'] = 'in_progress';
+        } else {
+            // Vérifie si les dépendances Python sont présentes
+            $daemonPath = dirname(__FILE__) . '/../../resources/demond/ai_connector_daemon.py';
+            if (file_exists($daemonPath)) {
+                $return['state'] = 'ok';
+            } else {
+                $return['state'] = 'nok';
+            }
+        }
+        
+        $return['version'] = '1.0.0';
+        return $return;
+    }
+
     public static function deamon_start() {
         self::deamon_stop();
         log::add('ai_connector', 'info', 'Lancement du démon Python en arrière-plan.');
