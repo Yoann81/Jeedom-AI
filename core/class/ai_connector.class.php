@@ -45,6 +45,7 @@ class ai_connector extends eqLogic {
         $return['launchable'] = 'ok';
         
         $pidFile = '/tmp/jeedom/ai_connector/daemon.pid';
+        error_log('deamon_info: checking ' . $pidFile);
         if (file_exists($pidFile)) {
             $pid = trim(file_get_contents($pidFile));
             if (!empty($pid) && is_numeric($pid)) {
@@ -57,22 +58,23 @@ class ai_connector extends eqLogic {
                 }
             }
         }
+        error_log('deamon_info returning: ' . json_encode($return));
         return $return;
     }
 
     public static function dependancy_info() {
         $return = array();
         
-        $progressFile = dirname(__FILE__) . '/../../tmp/ai_connector_dep_in_progress';
+        $pluginPath = realpath(dirname(__FILE__) . '/../..');
+        $progressFile = $pluginPath . '/tmp/ai_connector_dep_in_progress';
+        $daemonPath = $pluginPath . '/resources/demond/ai_connector_daemon.py';
+        
         if (file_exists($progressFile)) {
             $return['state'] = 'in_progress';
+        } else if (file_exists($daemonPath)) {
+            $return['state'] = 'ok';
         } else {
-            $daemonPath = dirname(__FILE__) . '/../../resources/demond/ai_connector_daemon.py';
-            if (file_exists($daemonPath)) {
-                $return['state'] = 'ok';
-            } else {
-                $return['state'] = 'nok';
-            }
+            $return['state'] = 'nok';
         }
         
         return $return;

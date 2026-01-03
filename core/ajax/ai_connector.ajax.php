@@ -85,53 +85,22 @@ try {
 
     // Récupère l'état des dépendances
     if (init('action') == 'dependancy_info') {
-        $return = array('state' => 'ok');
-        
-        // Vérifie si le fichier de lock pour les dépendances existe
-        $lockFile = dirname(__FILE__) . '/../../../tmp/ai_connector_dep_in_progress';
-        if (file_exists($lockFile)) {
-            $return['state'] = 'in_progress';
+        if (function_exists('ai_connector_dependancy_info')) {
+            $data = ai_connector_dependancy_info();
+            ajax::success($data);
         } else {
-            // Vérifie si le daemon est accessible
-            $daemonPath = dirname(__FILE__) . '/../../resources/demond/ai_connector_daemon.py';
-            if (!file_exists($daemonPath)) {
-                $return['state'] = 'nok';
-                $return['message'] = 'Daemon non trouvé';
-            }
+            ajax::success(['state' => 'nok', 'error' => 'Fonction non trouvée']);
         }
-        
-        ajax::success($return);
     }
 
     // Récupère l'état du démon
     if (init('action') == 'deamon_info') {
-        $return = array('state' => 'nok');
-        
-        try {
-            // Tente de récupérer le PID du daemon
-            $pidFile = dirname(__FILE__) . '/../../resources/demond/ai_connector.pid';
-            
-            if (file_exists($pidFile)) {
-                $pid = trim(file_get_contents($pidFile));
-                if (!empty($pid) && is_numeric($pid)) {
-                    // Vérifie si le processus existe
-                    if (function_exists('posix_kill')) {
-                        if (@posix_kill($pid, 0)) {
-                            $return['state'] = 'ok';
-                        }
-                    } else {
-                        // Fallback pour Windows ou si posix n'est pas disponible
-                        $return['state'] = 'ok';
-                        $return['message'] = 'PID: ' . $pid;
-                    }
-                }
-            }
-        } catch (Exception $e) {
-            $return['state'] = 'nok';
-            $return['message'] = $e->getMessage();
+        if (function_exists('ai_connector_deamon_info')) {
+            $data = ai_connector_deamon_info();
+            ajax::success($data);
+        } else {
+            ajax::success(['state' => 'nok', 'error' => 'Fonction non trouvée']);
         }
-        
-        ajax::success($return);
     }
 
     throw new Exception(__('Aucune méthode correspondante à', __FILE__) . ' : ' . init('action'));

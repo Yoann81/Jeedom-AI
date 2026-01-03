@@ -84,3 +84,51 @@ function ai_connector_deamon_info() {
 
     </fieldset>
 </form>
+
+<script>
+$(document).ready(function() {
+    // Charger l'état des dépendances
+    $.ajax({
+        type: 'POST',
+        url: 'core/ajax/ai_connector.ajax.php',
+        data: {
+            action: 'dependancy_info'
+        },
+        dataType: 'json',
+        error: function(error) {
+            console.log('Error fetching dependancy_info:', error);
+        },
+        success: function(data) {
+            console.log('dependancy_info:', data);
+            if (data && data.state === 'ok') {
+                $('#div_dependancy').append('<i class="fas fa-check"></i> OK');
+            } else if (data && data.state === 'in_progress') {
+                $('#div_dependancy').append('<i class="fas fa-spinner fa-spin"></i> Installation en cours...');
+            } else {
+                $('#div_dependancy').append('<i class="fas fa-times"></i> Erreur');
+            }
+        }
+    });
+
+    // Charger l'état du démon
+    $.ajax({
+        type: 'POST',
+        url: 'core/ajax/ai_connector.ajax.php',
+        data: {
+            action: 'deamon_info'
+        },
+        dataType: 'json',
+        error: function(error) {
+            console.log('Error fetching deamon_info:', error);
+        },
+        success: function(data) {
+            console.log('deamon_info:', data);
+            if (data && data.state === 'ok') {
+                $('#div_daemon').append('<i class="fas fa-check"></i> Actif');
+            } else {
+                $('#div_daemon').append('<i class="fas fa-times"></i> Inactif');
+            }
+        }
+    });
+});
+</script>
