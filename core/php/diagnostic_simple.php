@@ -5,8 +5,9 @@
  * À lancer depuis: http://votre-jeedom/plugins/ai_connector/core/php/diagnostic_simple.php
  */
 
-error_reporting(E_ALL);
-ini_set('display_errors', '1');
+// Supprimer les warnings des fichiers de cache manquants de Jeedom
+error_reporting(E_ALL & ~E_WARNING & ~E_NOTICE);
+ini_set('display_errors', '0');
 
 try {
     require_once dirname(__FILE__) . '/../../../../core/php/core.inc.php';
