@@ -90,9 +90,7 @@ function ai_connector_deamon_info() {
             </div>
         </div>
     </fieldset>
-</form>
 
-<form class="form-horizontal">
     <fieldset>
         <legend><i class="fas fa-stethoscope"></i> Outils de diagnostic</legend>
         <div class="form-group">
