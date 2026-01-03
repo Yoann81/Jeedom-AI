@@ -121,7 +121,9 @@ function ai_connector_deamon_info() {
 
 <script>
 $(document).ready(function() {
-    // Charger l'état des dépendances
+    // Remplir les blocs verts de Jeedom via les div standards
+    
+    // Chercher et remplir le bloc Dépendances
     $.ajax({
         type: 'POST',
         url: 'core/ajax/ai_connector.ajax.php',
@@ -129,22 +131,26 @@ $(document).ready(function() {
             action: 'dependancy_info'
         },
         dataType: 'json',
-        error: function(error) {
-            console.log('Error fetching dependancy_info:', error);
-        },
         success: function(data) {
-            console.log('dependancy_info:', data);
-            if (data && data.state === 'ok') {
-                $('#div_dependancy').append('<i class="fas fa-check"></i> OK');
-            } else if (data && data.state === 'in_progress') {
-                $('#div_dependancy').append('<i class="fas fa-spinner fa-spin"></i> Installation en cours...');
+            console.log('dependancy_info response:', data);
+            var html = '';
+            if (data.state === 'ok') {
+                html = '<span class="label label-success"><i class="fas fa-check"></i> OK</span>';
+            } else if (data.state === 'in_progress') {
+                html = '<span class="label label-info"><i class="fas fa-spinner fa-spin"></i> Installation en cours...</span>';
             } else {
-                $('#div_dependancy').append('<i class="fas fa-times"></i> Erreur');
+                html = '<span class="label label-danger"><i class="fas fa-times"></i> Non disponible</span>';
+            }
+            
+            // Chercher le div parent du bloc Dépendances
+            var depBlocs = $('h4:contains("Dépendances")').closest('fieldset').find('.form-group');
+            if (depBlocs.length > 0) {
+                depBlocs.first().find('div[class*="col-"]').eq(-1).html(html);
             }
         }
     });
-
-    // Charger l'état du démon
+    
+    // Chercher et remplir le bloc Démon
     $.ajax({
         type: 'POST',
         url: 'core/ajax/ai_connector.ajax.php',
@@ -152,15 +158,19 @@ $(document).ready(function() {
             action: 'deamon_info'
         },
         dataType: 'json',
-        error: function(error) {
-            console.log('Error fetching deamon_info:', error);
-        },
         success: function(data) {
-            console.log('deamon_info:', data);
-            if (data && data.state === 'ok') {
-                $('#div_daemon').append('<i class="fas fa-check"></i> Actif');
+            console.log('deamon_info response:', data);
+            var html = '';
+            if (data.state === 'ok') {
+                html = '<span class="label label-success"><i class="fas fa-check"></i> Actif</span>';
             } else {
-                $('#div_daemon').append('<i class="fas fa-times"></i> Inactif');
+                html = '<span class="label label-danger"><i class="fas fa-times"></i> Inactif</span>';
+            }
+            
+            // Chercher le div parent du bloc Démon
+            var daemonBlocs = $('h4:contains("Démon")').closest('fieldset').find('.form-group');
+            if (daemonBlocs.length > 0) {
+                daemonBlocs.first().find('div[class*="col-"]').eq(-1).html(html);
             }
         }
     });
