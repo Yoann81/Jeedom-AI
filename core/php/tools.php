@@ -289,9 +289,9 @@ if (file_exists($core_inc_path)) {
                         <li>executeCommand()</li>
                         <li>getJeedomContext()</li>
                     </ul>
-                    <a href="test_ajax_endpoints.php" target="_blank">
-                        Tester les endpoints →
-                    </a>
+                    <p style="color: #666; font-size: 12px;">
+                        À lancer via CLI: <code>php core/php/test_ajax_endpoints.php</code>
+                    </p>
                 </div>
                 
                 <!-- Test Simple IA -->
