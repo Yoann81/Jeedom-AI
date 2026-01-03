@@ -5,6 +5,26 @@
 
 class ai_connector extends eqLogic {
 
+    /**
+     * Convertit une valeur en string de manière sécurisée
+     * Gère les cas : array, null, object, etc.
+     */
+    private static function toSafeString($value) {
+        if ($value === null) {
+            return '';
+        }
+        if (is_array($value)) {
+            return json_encode($value);
+        }
+        if (is_bool($value)) {
+            return $value ? 'true' : 'false';
+        }
+        if (is_object($value)) {
+            return get_class($value);
+        }
+        return (string)$value;
+    }
+
     public static function deamon_info() {
         $return = array();
         $return['log'] = 'ai_connector_daemon';
@@ -176,6 +196,8 @@ class ai_connector extends eqLogic {
                 }
                 
                 // S'assurer que les valeurs sont des strings ou des nombres, pas null/array
+                $status = $eq->getStatus();
+                
                 $equipments[] = [
                     'id' => (int)$eq->getId(),
                     'name' => (string)$eq->getName(),
@@ -184,7 +206,7 @@ class ai_connector extends eqLogic {
                     'type' => (string)$type,
                     'humanName' => (string)$humanName,
                     'isEnable' => (bool)$eq->getIsEnable(),
-                    'status' => (string)($eq->getStatus() ?? '')
+                    'status' => self::toSafeString($status)
                 ];
             } catch (Exception $e) {
                 // Ignorer les équipements problématiques et continuer
