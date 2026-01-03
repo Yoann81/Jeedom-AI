@@ -104,6 +104,13 @@ $eqLogics = eqLogic::byType('ai_connector');
                             </div>
                         </div>
                         <div class="form-group">
+                            <label class="col-sm-3 control-label">{{Sensibilité Picovoice (0.0 - 1.0)}}</label>
+                            <div class="col-sm-2">
+                                <input type="number" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="porcupine_sensitivity" min="0" max="1" step="0.01" placeholder="0.95" />
+                                <small>Augmentez pour meilleure détection, diminuez si trop de faux positifs</small>
+                            </div>
+                        </div>
+                        <div class="form-group">
                             <label class="col-sm-3 control-label">{{ID Micro (Index)}}</label>
                             <div class="col-sm-2">
                                 <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="voice_device_id" placeholder="1"/>
