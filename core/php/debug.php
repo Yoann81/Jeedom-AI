@@ -183,9 +183,7 @@ echo "Chemin du plugin: " . $pluginPath . "\n\n";
 echo "Fichiers principaux:\n";
 $files = [
     'class/ai_connector.class.php',
-    'ajax/ai_connector.ajax.php',
-    'diagnostic_simple.php',
-    'test_simple_ai.php'
+    'ajax/ai_connector.ajax.php'
 ];
 
 foreach ($files as $file) {
