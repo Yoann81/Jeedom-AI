@@ -150,11 +150,120 @@ class ai_connector extends eqLogic {
         $response->save();
     }
 
+    /**
+     * Récupère tous les équipements Jeedom disponibles
+     * @return array Liste des équipements avec leurs informations
+     */
+    public static function getAllEquipments() {
+        $equipments = [];
+        foreach (eqLogic::all() as $eq) {
+            if ($eq->getType() === 'ai_connector') continue; // Exclure les équipements IA
+            
+            $equipments[] = [
+                'id' => $eq->getId(),
+                'name' => $eq->getName(),
+                'logicalId' => $eq->getLogicalId(),
+                'object_id' => $eq->getObject_id(),
+                'type' => $eq->getType(),
+                'humanName' => $eq->getHumanName(),
+                'isEnable' => $eq->getIsEnable(),
+                'status' => $eq->getStatus()
+            ];
+        }
+        return $equipments;
+    }
+
+    /**
+     * Récupère les commandes d'un équipement
+     * @param $eq_id ID de l'équipement
+     * @return array Liste des commandes
+     */
+    public static function getEquipmentCommands($eq_id) {
+        $eqLogic = eqLogic::byId($eq_id);
+        if (!is_object($eqLogic)) {
+            return [];
+        }
+
+        $commands = [];
+        foreach ($eqLogic->getCmd() as $cmd) {
+            $commands[] = [
+                'id' => $cmd->getId(),
+                'name' => $cmd->getName(),
+                'logicalId' => $cmd->getLogicalId(),
+                'type' => $cmd->getType(),
+                'subType' => $cmd->getSubType(),
+                'isVisible' => $cmd->getIsVisible(),
+                'value' => $cmd->execCmd(),
+                'unit' => $cmd->getUnite(),
+                'minValue' => $cmd->getMinValue(),
+                'maxValue' => $cmd->getMaxValue()
+            ];
+        }
+        return $commands;
+    }
+
+    /**
+     * Exécute une commande Jeedom
+     * @param $cmd_id ID de la commande
+     * @param $options Options d'exécution
+     * @return string Résultat de l'exécution
+     */
+    public static function executeJeedomCommand($cmd_id, $options = []) {
+        $cmd = cmd::byId($cmd_id);
+        if (!is_object($cmd)) {
+            return "Erreur: Commande non trouvée";
+        }
+        
+        try {
+            $cmd->execute($options);
+            return "Commande exécutée avec succès: " . $cmd->getName();
+        } catch (Exception $e) {
+            return "Erreur lors de l'exécution: " . $e->getMessage();
+        }
+    }
+
+    /**
+     * Formate les équipements et commandes pour le prompt de l'IA
+     * @return string Format texte pour le prompt
+     */
+    public function getJeedomContextForAI() {
+        $context = "\n\n=== ÉQUIPEMENTS JEEDOM DISPONIBLES ===\n";
+        $equipments = self::getAllEquipments();
+        
+        foreach ($equipments as $eq) {
+            if (!$eq['isEnable']) continue;
+            
+            $context .= "\n📱 " . $eq['humanName'] . " (ID: " . $eq['id'] . ")\n";
+            $context .= "Type: " . $eq['type'] . "\n";
+            
+            $commands = self::getEquipmentCommands($eq['id']);
+            if (!empty($commands)) {
+                $context .= "Commandes:\n";
+                foreach ($commands as $cmd) {
+                    if (!$cmd['isVisible']) continue;
+                    $context .= "  - " . $cmd['name'] . " (ID: " . $cmd['id'] . ") [" . $cmd['type'] . "/" . $cmd['subType'] . "]\n";
+                    if (!empty($cmd['value'])) {
+                        $context .= "    Valeur actuelle: " . $cmd['value'] . ($cmd['unit'] ? ' ' . $cmd['unit'] : '') . "\n";
+                    }
+                }
+            }
+        }
+        
+        $context .= "\n\n=== INSTRUCTIONS ===\n";
+        $context .= "Tu peux contrôler les équipements Jeedom. Quand l'utilisateur demande quelque chose:\n";
+        $context .= "1. Identifie l'équipement et la commande correspondante\n";
+        $context .= "2. Utilise le format: [EXEC_COMMAND: id_commande]\n";
+        $context .= "3. Confirme l'action à l'utilisateur\n";
+        
+        return $context;
+    }
+
     public function processMessage($userMessage) {
         $engine = $this->getConfiguration('engine', 'gemini');
         $apiKey = $this->getConfiguration('apiKey');
         $model = $this->getConfiguration('model');
         $systemPrompt = $this->getConfiguration('prompt', ''); // Get the system prompt from equipment configuration
+        $includeEquipments = $this->getConfiguration('include_equipments', 1); // Inclure équipements par défaut
 
         if (empty($apiKey)) {
             $errorMsg = "La clé API n'est pas configurée pour l'équipement " . $this->getHumanName(true);
@@ -169,6 +278,25 @@ class ai_connector extends eqLogic {
             return $errorMsg;
         }
 
+        // Ajouter le contexte des équipements au prompt si activé
+        $finalSystemPrompt = $systemPrompt;
+        if ($includeEquipments) {
+            $finalSystemPrompt .= $this->getJeedomContextForAI();
+        }
+
+        // Traiter les commandes d'exécution potentielles
+        $response = $this->callAIEngine($finalSystemPrompt, $userMessage, $apiKey, $model, $engine);
+        
+        // Vérifier et exécuter les commandes au format [EXEC_COMMAND: id]
+        $response = $this->processAICommands($response);
+        
+        return $response;
+    }
+
+    /**
+     * Appelle le moteur IA approprié
+     */
+    private function callAIEngine($systemPrompt, $userMessage, $apiKey, $model, $engine) {
         switch ($engine) {
             case 'openai':
                 return $this->callOpenAI($systemPrompt, $userMessage, $apiKey, $model);
@@ -178,6 +306,26 @@ class ai_connector extends eqLogic {
             default:
                 return $this->callGemini($systemPrompt, $userMessage, $apiKey, $model);
         }
+    }
+
+    /**
+     * Traite les commandes générées par l'IA au format [EXEC_COMMAND: id]
+     */
+    private function processAICommands($response) {
+        $pattern = '/\[EXEC_COMMAND:\s*(\d+)\]/i';
+        $matches = [];
+        
+        if (preg_match_all($pattern, $response, $matches)) {
+            foreach ($matches[1] as $cmd_id) {
+                log::add('ai_connector', 'info', 'Exécution de la commande Jeedom ID: ' . $cmd_id);
+                $result = self::executeJeedomCommand($cmd_id);
+                log::add('ai_connector', 'info', 'Résultat: ' . $result);
+            }
+            // Supprimer les balises de commande de la réponse visible
+            $response = preg_replace($pattern, '', $response);
+        }
+        
+        return trim($response);
     }
 
     /**
