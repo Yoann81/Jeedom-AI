@@ -53,17 +53,70 @@ if (count($aiEqs) == 0) {
             echo "❌ Commande 'reponse' NON trouvée\n";
         }
         
-        // 4. Équipements
+// 4. Équipements
         echo "\n=== 4. ÉQUIPEMENTS DISPONIBLES ===\n";
-        $equipments = ai_connector::getAllEquipments();
-        echo "Total: " . count($equipments) . "\n";
-        if (count($equipments) == 0) {
-            echo "⚠️  Aucun équipement à contrôler\n";
-        } else {
-            echo "Premiers 3:\n";
-            foreach (array_slice($equipments, 0, 3) as $eq) {
-                echo "  - " . $eq['humanName'] . " (ID: " . $eq['id'] . ")\n";
+        try {
+            $equipments = ai_connector::getAllEquipments();
+            echo "Total trouvés: " . count($equipments) . "\n";
+            
+            if (count($equipments) == 0) {
+                echo "⚠️  ATTENTION: Aucun équipement détecté!\n\n";
+                
+                // Vérifier pourquoi
+                echo "Vérification détaillée:\n";
+                
+                // Tous les équipements
+                $allEqs = eqLogic::all();
+                echo "  Total équipements dans Jeedom: " . count($allEqs) . "\n";
+                
+                if (count($allEqs) > 0) {
+                    echo "  Types d'équipements:\n";
+                    $types = [];
+                    foreach ($allEqs as $eq) {
+                        $type = $eq->getType();
+                        $types[$type] = ($types[$type] ?? 0) + 1;
+                    }
+                    foreach ($types as $type => $count) {
+                        $aiType = ($type === 'ai_connector') ? ' (❌ Exclus)' : '';
+                        echo "    - " . $type . ": " . $count . $aiType . "\n";
+                    }
+                    
+                    // Vérifier les équipements non IA
+                    $nonAiEqs = [];
+                    foreach ($allEqs as $eq) {
+                        if ($eq->getType() !== 'ai_connector') {
+                            $nonAiEqs[] = $eq;
+                        }
+                    }
+                    
+                    if (count($nonAiEqs) > 0) {
+                        echo "\n  Équipements non-IA trouvés (" . count($nonAiEqs) . "):\n";
+                        foreach (array_slice($nonAiEqs, 0, 5) as $eq) {
+                            echo "    • " . $eq->getName() . " (ID: " . $eq->getId() . ", Type: " . $eq->getType() . ", Activé: " . ($eq->getIsEnable() ? 'OUI' : 'NON') . ")\n";
+                        }
+                        if (count($nonAiEqs) > 5) {
+                            echo "    ... et " . (count($nonAiEqs) - 5) . " autres\n";
+                        }
+                    } else {
+                        echo "  ❌ Aucun équipement non-IA trouvé (seulement des IA)\n";
+                    }
+                } else {
+                    echo "  ❌ Aucun équipement du tout dans Jeedom!\n";
+                    echo "  Solution: Créez d'abord des équipements (lumières, thermostats, etc.)\n";
+                }
+            } else {
+                echo "Premiers équipements:\n";
+                foreach (array_slice($equipments, 0, 5) as $eq) {
+                    $cmds = ai_connector::getEquipmentCommands($eq['id']);
+                    echo "  • " . $eq['humanName'] . " (ID: " . $eq['id'] . ", Type: " . $eq['type'] . ", Commandes: " . count($cmds) . ")\n";
+                }
+                if (count($equipments) > 5) {
+                    echo "  ... et " . (count($equipments) - 5) . " autres\n";
+                }
             }
+        } catch (Exception $e) {
+            echo "❌ Exception: " . $e->getMessage() . "\n";
+            echo $e->getTraceAsString() . "\n";
         }
         
         // 5. Tester un appel IA
