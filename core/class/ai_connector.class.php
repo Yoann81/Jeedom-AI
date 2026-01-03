@@ -157,23 +157,38 @@ class ai_connector extends eqLogic {
     public static function getAllEquipments() {
         $equipments = [];
         foreach (eqLogic::all() as $eq) {
-            // Vérifier si getType() existe
-            if (!method_exists($eq, 'getType')) {
+            try {
+                // Récupérer le type de manière safe
+                $type = 'unknown';
+                if (method_exists($eq, 'getType')) {
+                    $type = $eq->getType();
+                }
+                
+                // Exclure les équipements IA
+                if ($type === 'ai_connector') continue;
+                
+                // Récupérer l'humanName de manière safe
+                $humanName = 'Unknown';
+                if (method_exists($eq, 'getHumanName')) {
+                    $humanName = $eq->getHumanName();
+                } elseif (method_exists($eq, 'getName')) {
+                    $humanName = $eq->getName();
+                }
+                
+                $equipments[] = [
+                    'id' => $eq->getId(),
+                    'name' => $eq->getName(),
+                    'logicalId' => $eq->getLogicalId(),
+                    'object_id' => $eq->getObject_id(),
+                    'type' => $type,
+                    'humanName' => $humanName,
+                    'isEnable' => $eq->getIsEnable(),
+                    'status' => $eq->getStatus()
+                ];
+            } catch (Exception $e) {
+                // Ignorer les équipements problématiques et continuer
                 continue;
             }
-            
-            if ($eq->getType() === 'ai_connector') continue; // Exclure les équipements IA
-            
-            $equipments[] = [
-                'id' => $eq->getId(),
-                'name' => $eq->getName(),
-                'logicalId' => $eq->getLogicalId(),
-                'object_id' => $eq->getObject_id(),
-                'type' => $eq->getType(),
-                'humanName' => $eq->getHumanName(),
-                'isEnable' => $eq->getIsEnable(),
-                'status' => $eq->getStatus()
-            ];
         }
         return $equipments;
     }
@@ -190,32 +205,41 @@ class ai_connector extends eqLogic {
         }
 
         $commands = [];
-        foreach ($eqLogic->getCmd() as $cmd) {
-            // Vérifier si les méthodes existent
-            if (!method_exists($cmd, 'getType') || !method_exists($cmd, 'getLastValue')) {
-                continue;
+        try {
+            foreach ($eqLogic->getCmd() as $cmd) {
+                try {
+                    // Récupérer les infos de manière safe
+                    $cmdType = 'info';
+                    if (method_exists($cmd, 'getType')) {
+                        $cmdType = $cmd->getType();
+                    }
+                    
+                    $cmdValue = '';
+                    if ($cmdType === 'info' && method_exists($cmd, 'getLastValue')) {
+                        $cmdValue = $cmd->getLastValue();
+                    }
+                    
+                    $commands[] = [
+                        'id' => $cmd->getId(),
+                        'name' => $cmd->getName(),
+                        'logicalId' => $cmd->getLogicalId(),
+                        'type' => $cmdType,
+                        'subType' => method_exists($cmd, 'getSubType') ? $cmd->getSubType() : null,
+                        'isVisible' => method_exists($cmd, 'getIsVisible') ? $cmd->getIsVisible() : true,
+                        'value' => $cmdValue,
+                        'unit' => method_exists($cmd, 'getUnite') ? $cmd->getUnite() : '',
+                        'minValue' => method_exists($cmd, 'getMinValue') ? $cmd->getMinValue() : null,
+                        'maxValue' => method_exists($cmd, 'getMaxValue') ? $cmd->getMaxValue() : null
+                    ];
+                } catch (Exception $e) {
+                    // Ignorer les commandes problématiques et continuer
+                    continue;
+                }
             }
-            
-            // Récupérer la valeur actuelle selon le type de commande
-            $cmdValue = '';
-            if ($cmd->getType() === 'info') {
-                // Pour les infos, récupérer la dernière valeur
-                $cmdValue = $cmd->getLastValue();
-            }
-            
-            $commands[] = [
-                'id' => $cmd->getId(),
-                'name' => $cmd->getName(),
-                'logicalId' => $cmd->getLogicalId(),
-                'type' => $cmd->getType(),
-                'subType' => $cmd->getSubType(),
-                'isVisible' => $cmd->getIsVisible(),
-                'value' => $cmdValue,
-                'unit' => $cmd->getUnite(),
-                'minValue' => $cmd->getMinValue(),
-                'maxValue' => $cmd->getMaxValue()
-            ];
+        } catch (Exception $e) {
+            // Silencieusement retourner les commandes récupérées jusqu'à présent
         }
+        
         return $commands;
     }
 
