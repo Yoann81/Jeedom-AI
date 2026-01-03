@@ -157,7 +157,6 @@ class ai_connector extends eqLogic {
                 }
             }
         }
-        }
         
         $full_cmd = $cmd . " >> " . $log_file . " 2>&1 &";
         

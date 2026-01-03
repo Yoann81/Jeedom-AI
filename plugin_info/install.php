@@ -1,6 +1,9 @@
 <?php
 require_once dirname(__FILE__) . '/../../../core/php/core.inc.php';
 
+// Enregistrer le plugin auprès de Jeedom AVANT toute autre chose
+require_once dirname(__FILE__) . '/../core/php/define.php';
+
 // Inclure les fonctions de dépendances et démons
 require_once dirname(__FILE__) . '/../core/php/ai_connector.inc.php';
 
