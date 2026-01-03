@@ -76,13 +76,15 @@ class ai_connector extends eqLogic {
         $porcupineEnable = $listeningEqLogic->getConfiguration('porcupine_enable', 0);
         $porcupineAccessKey = $listeningEqLogic->getConfiguration('porcupine_access_key', '');
         $porcupineWakewordNames = $listeningEqLogic->getConfiguration('porcupine_wakeword_names', '');
+        $porcupineMode = $listeningEqLogic->getConfiguration('porcupine_mode', 'default');
+        $porcupineCustomFile = $listeningEqLogic->getConfiguration('porcupine_custom_file', '');
         $sttEngine = $listeningEqLogic->getConfiguration('stt_engine', 'whisper');
         $googleApiKey = $listeningEqLogic->getConfiguration('google_api_key', '');
         $sttLanguage = $listeningEqLogic->getConfiguration('stt_language', 'fr-FR');
         $porcupineSensitivity = $listeningEqLogic->getConfiguration('porcupine_sensitivity', '0.95');
         
         // DEBUG
-        log::add('ai_connector', 'debug', 'DEBUG Picovoice: porcupine_enable=' . $porcupineEnable . ', porcupine_sensitivity=' . $porcupineSensitivity . ', access_key=' . (empty($porcupineAccessKey) ? 'EMPTY' : 'SET'));
+        log::add('ai_connector', 'debug', 'DEBUG Picovoice: porcupine_enable=' . $porcupineEnable . ', porcupine_sensitivity=' . $porcupineSensitivity . ', mode=' . $porcupineMode . ', access_key=' . (empty($porcupineAccessKey) ? 'EMPTY' : 'SET'));
         
         $path = realpath(dirname(__FILE__) . '/../../resources/demond/ai_connector_daemon.py');
         if (!file_exists($path)) {
@@ -105,11 +107,21 @@ class ai_connector extends eqLogic {
                 $cmd .= " --porcupine_enable 1";
                 $cmd .= " --porcupine_access_key " . escapeshellarg($porcupineAccessKey);
                 $cmd .= " --porcupine_sensitivity " . escapeshellarg($porcupineSensitivity);
+                $cmd .= " --porcupine_mode " . escapeshellarg($porcupineMode);
                 
-                if (!empty($porcupineWakewordNames)) {
-                    $cmd .= " --porcupine_wakeword_names " . escapeshellarg($porcupineWakewordNames);
+                // Mode personnalisé avec fichier
+                if ($porcupineMode === 'custom' && !empty($porcupineCustomFile)) {
+                    $cmd .= " --porcupine_custom_file " . escapeshellarg($porcupineCustomFile);
+                    log::add('ai_connector', 'info', 'Mode Picovoice personnalisé activé avec fichier: ' . $porcupineCustomFile);
+                } elseif ($porcupineMode === 'default') {
+                    // Mode par défaut
+                    if (!empty($porcupineWakewordNames)) {
+                        $cmd .= " --porcupine_wakeword_names " . escapeshellarg($porcupineWakewordNames);
+                    }
+                    log::add('ai_connector', 'info', 'Mode Picovoice par défaut activé');
                 }
             }
+        }
         }
         
         $full_cmd = $cmd . " >> " . $log_file . " 2>&1 &";

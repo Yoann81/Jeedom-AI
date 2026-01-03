@@ -111,6 +111,28 @@ $eqLogics = eqLogic::byType('ai_connector');
                             </div>
                         </div>
                         <div class="form-group">
+                            <label class="col-sm-3 control-label">{{Mode Wakeword}}</label>
+                            <div class="col-sm-5">
+                                <label class="radio-inline">
+                                    <input type="radio" class="eqLogicAttr" data-l1key="configuration" data-l2key="porcupine_mode" value="default" /> 
+                                    {{Par défaut (picovoice)}}
+                                </label>
+                                <label class="radio-inline">
+                                    <input type="radio" class="eqLogicAttr" data-l1key="configuration" data-l2key="porcupine_mode" value="custom" /> 
+                                    {{Fichier personnalisé}}
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group" id="porcupine_custom_file_group" style="display:none;">
+                            <label class="col-sm-3 control-label">{{Fichier Wakeword Personnalisé (.ppn)}}</label>
+                            <div class="col-sm-5">
+                                <input type="file" id="porcupine_custom_file" accept=".ppn" />
+                                <small>Téléchargez un fichier .ppn entraîné personnalisé</small>
+                                <br>
+                                <span id="porcupine_current_file" class="eqLogicAttr" data-l1key="configuration" data-l2key="porcupine_custom_file" style="display:block; margin-top:10px; color:#666;"></span>
+                            </div>
+                        </div>
+                        <div class="form-group">
                             <label class="col-sm-3 control-label">{{ID Micro (Index)}}</label>
                             <div class="col-sm-2">
                                 <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="voice_device_id" placeholder="1"/>
@@ -226,6 +248,42 @@ $eqLogics = eqLogic::byType('ai_connector');
         </div>
     </div>
 </div>
+
+<script>
+$(document).ready(function() {
+    // Gestion du mode wakeword
+    function updateWakewordMode() {
+        var mode = $('input[data-l2key="porcupine_mode"]:checked').val();
+        if (mode === 'custom') {
+            $('#porcupine_custom_file_group').show();
+        } else {
+            $('#porcupine_custom_file_group').hide();
+        }
+    }
+    
+    // Afficher le fichier courant
+    function displayCurrentFile() {
+        var currentFile = $('.eqLogicAttr[data-l2key="porcupine_custom_file"]').attr('data-l1key') ? 
+            $('.eqLogicAttr[data-l2key="porcupine_custom_file"]').text() : '';
+        if (currentFile) {
+            $('#porcupine_current_file').text('Fichier actuel: ' + currentFile);
+        }
+    }
+    
+    // Événements
+    $('input[data-l2key="porcupine_mode"]').on('change', updateWakewordMode);
+    $('#porcupine_custom_file').on('change', function() {
+        var file = this.files[0];
+        if (file) {
+            $('.eqLogicAttr[data-l2key="porcupine_custom_file"]').text(file.name).trigger('change');
+        }
+    });
+    
+    // Initialisation
+    updateWakewordMode();
+    displayCurrentFile();
+});
+</script>
 
 <?php include_file('desktop', 'ai_connector', 'js', 'ai_connector'); ?>
 <?php include_file('core', 'plugin.template', 'js'); ?>
