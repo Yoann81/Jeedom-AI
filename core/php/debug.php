@@ -1,11 +1,12 @@
 <?php
 /**
- * Débogage - Affiche TOUTES les erreurs et avertissements
+ * Débogage - Affiche les erreurs importantes (pas les warnings Jeedom cache)
  * Idéal pour voir ce qui cause le problème
  */
 
-error_reporting(E_ALL);
-ini_set('display_errors', '1');
+// Supprimer les warnings des fichiers de cache manquants de Jeedom
+error_reporting(E_ALL & ~E_WARNING & ~E_NOTICE);
+ini_set('display_errors', '0');
 ini_set('log_errors', '1');
 
 // Créer un handler pour afficher toutes les erreurs

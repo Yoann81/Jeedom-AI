@@ -4,8 +4,9 @@
  * Sans pièges ni erreurs silencieuses
  */
 
-error_reporting(E_ALL);
-ini_set('display_errors', '1');
+// Supprimer les warnings des fichiers de cache manquants de Jeedom
+error_reporting(E_ALL & ~E_WARNING & ~E_NOTICE);
+ini_set('display_errors', '0');
 
 ?>
 <!DOCTYPE html>
