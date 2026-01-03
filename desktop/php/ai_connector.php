@@ -140,6 +140,15 @@ $eqLogics = eqLogic::byType('ai_connector');
                                 <textarea class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="prompt" rows="5" placeholder="{{Décrivez le comportement de l'IA, par exemple : 'Tu es un assistant domotique utile. Réponds de manière concise.'}}"></textarea>
                             </div>
                         </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">{{Inclure les équipements Jeedom}}</label>
+                            <div class="col-sm-3">
+                                <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="configuration" data-l2key="include_equipments" checked/>{{Activer}}</label>
+                            </div>
+                            <div class="col-sm-6" style="color: #666; font-size: 12px;">
+                                {{L'IA aura accès à la liste de vos équipements et pourra les contrôler}}
+                            </div>
+                        </div>
 
                         <br>
                         <legend><i class="fas fa-microphone"></i> {{Configuration STT (Speech-to-Text)}}</legend>
