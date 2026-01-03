@@ -3,6 +3,9 @@
  * Plugin AI Multi-Connect pour Jeedom
  */
 
+// Charge les fonctions de vérification des dépendances et du démon
+require_once dirname(__FILE__) . '/../php/ai_connector.inc.php';
+
 class ai_connector extends eqLogic {
 
     /**
@@ -26,44 +29,11 @@ class ai_connector extends eqLogic {
     }
 
     public static function deamon_info() {
-        $return = array();
-        $return['log'] = 'ai_connector_daemon';
-        $return['launchable'] = 'ok';
-        $return['state'] = 'nok';
-
-        $pid_file = '/tmp/jeedom/ai_connector/daemon.pid';
-
-        if (file_exists($pid_file)) {
-            $pid = trim(file_get_contents($pid_file));
-            if (posix_getpgid($pid)) { // Check if process exists
-                 $return['state'] = 'ok';
-            } else {
-                log::add('ai_connector', 'warning', 'Fichier PID trouvé mais processus ' . $pid . ' inexistant. Nettoyage.');
-                unlink($pid_file);
-            }
-        }
-        return $return;
+        return ai_connector_deamon_info();
     }
 
     public static function dependancy_info() {
-        $return = array();
-        $return['progress_file'] = dirname(__FILE__) . '/../../tmp/ai_connector_dep_in_progress';
-        
-        // Vérifie si l'installation est en cours
-        if (file_exists($return['progress_file'])) {
-            $return['state'] = 'in_progress';
-        } else {
-            // Vérifie si les dépendances Python sont présentes
-            $daemonPath = dirname(__FILE__) . '/../../resources/demond/ai_connector_daemon.py';
-            if (file_exists($daemonPath)) {
-                $return['state'] = 'ok';
-            } else {
-                $return['state'] = 'nok';
-            }
-        }
-        
-        $return['version'] = '1.0.0';
-        return $return;
+        return ai_connector_dependancy_info();
     }
 
     public static function deamon_start() {
