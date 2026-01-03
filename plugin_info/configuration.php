@@ -63,45 +63,43 @@ if (!isConnect()) {
 $(document).ready(function() {
     // Vérifier les dépendances via AJAX
     $.ajax({
-        url: '/plugins/ai_connector/core/ajax/ai_connector.ajax.php',
+        async: true,
         type: 'POST',
+        url: 'index.php?v=d&plugin=ai_connector&action=dependancy_info',
         dataType: 'json',
-        data: {
-            action: 'dependancy_info'
-        },
+        data: {},
         success: function(data) {
             if (data.state === 'ok') {
                 $('#div_dependancy').html('<span class="label label-success"><i class="fas fa-check"></i> OK</span>');
             } else if (data.state === 'in_progress') {
                 $('#div_dependancy').html('<span class="label label-info"><i class="fas fa-cog fa-spin"></i> Installation en cours...</span>');
             } else {
-                $('#div_dependancy').html('<span class="label label-danger"><i class="fas fa-times"></i> Erreur</span>');
+                $('#div_dependancy').html('<span class="label label-danger"><i class="fas fa-times"></i> ' + (data.message || 'Non disponible') + '</span>');
             }
         },
-        error: function() {
-            $('#div_dependancy').html('<span class="label label-danger"><i class="fas fa-times"></i> Erreur de vérification</span>');
+        error: function(jqXHR, textStatus, errorThrown) {
+            $('#div_dependancy').html('<span class="label label-danger"><i class="fas fa-times"></i> Erreur AJAX</span>');
         }
     });
 
     // Vérifier les démons via AJAX
     $.ajax({
-        url: '/plugins/ai_connector/core/ajax/ai_connector.ajax.php',
+        async: true,
         type: 'POST',
+        url: 'index.php?v=d&plugin=ai_connector&action=deamon_info',
         dataType: 'json',
-        data: {
-            action: 'deamon_info'
-        },
+        data: {},
         success: function(data) {
             if (data.state === 'ok') {
                 $('#div_daemon').html('<span class="label label-success"><i class="fas fa-check"></i> Démon actif</span>');
             } else if (data.state === 'nok') {
                 $('#div_daemon').html('<span class="label label-danger"><i class="fas fa-times"></i> Démon arrêté</span>');
             } else {
-                $('#div_daemon').html('<span class="label label-warning"><i class="fas fa-question"></i> Statut inconnu</span>');
+                $('#div_daemon').html('<span class="label label-warning"><i class="fas fa-question"></i> ' + (data.message || 'Statut inconnu') + '</span>');
             }
         },
-        error: function() {
-            $('#div_daemon').html('<span class="label label-warning"><i class="fas fa-question"></i> Vérification impossible</span>');
+        error: function(jqXHR, textStatus, errorThrown) {
+            $('#div_daemon').html('<span class="label label-warning"><i class="fas fa-question"></i> Erreur AJAX</span>');
         }
     });
 });
