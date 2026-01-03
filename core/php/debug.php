@@ -78,7 +78,7 @@ try {
         echo "\nPremier équipement:\n";
         echo "  ID: " . $aiEq->getId() . "\n";
         echo "  Nom: " . $aiEq->getName() . "\n";
-        echo "  Type: " . $aiEq->getType() . "\n";
+        echo "  Type (si disponible): " . (method_exists($aiEq, 'getType') ? $aiEq->getType() : 'N/A') . "\n";
         echo "  Activé: " . ($aiEq->getIsEnable() ? 'OUI' : 'NON') . "\n";
     }
 } catch (Exception $e) {
