@@ -118,6 +118,17 @@ class ai_connector extends eqLogic {
         $sttLanguage = $listeningEqLogic->getConfiguration('stt_language', 'fr-FR');
         $porcupineSensitivity = $listeningEqLogic->getConfiguration('porcupine_sensitivity', '0.95');
         
+        // Convertir les valeurs en strings sécurisées (gérer les arrays retournés par getConfiguration)
+        $deviceId = self::toSafeString($deviceId);
+        $porcupineAccessKey = self::toSafeString($porcupineAccessKey);
+        $porcupineWakewordNames = self::toSafeString($porcupineWakewordNames);
+        $porcupineMode = self::toSafeString($porcupineMode);
+        $porcupineCustomFile = self::toSafeString($porcupineCustomFile);
+        $sttEngine = self::toSafeString($sttEngine);
+        $googleApiKey = self::toSafeString($googleApiKey);
+        $sttLanguage = self::toSafeString($sttLanguage);
+        $porcupineSensitivity = self::toSafeString($porcupineSensitivity);
+        
         // DEBUG
         log::add('ai_connector', 'debug', 'DEBUG Picovoice: porcupine_enable=' . $porcupineEnable . ', porcupine_sensitivity=' . $porcupineSensitivity . ', mode=' . $porcupineMode . ', access_key=' . (empty($porcupineAccessKey) ? 'EMPTY' : 'SET'));
         
