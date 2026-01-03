@@ -60,6 +60,40 @@ function ai_connector_deamon_info() {
 
 <form class="form-horizontal">
     <fieldset>
+        <legend><i class="fas fa-cogs"></i> État du système</legend>
+        <div class="form-group">
+            <label class="col-lg-4 control-label">Dépendances</label>
+            <div class="col-lg-8">
+                <?php 
+                    $depInfo = ai_connector_dependancy_info();
+                    if ($depInfo['state'] === 'ok') {
+                        echo '<span class="label label-success"><i class="fas fa-check"></i> OK</span>';
+                    } elseif ($depInfo['state'] === 'in_progress') {
+                        echo '<span class="label label-warning"><i class="fas fa-spinner fa-spin"></i> Installation en cours...</span>';
+                    } else {
+                        echo '<span class="label label-danger"><i class="fas fa-times"></i> Non disponible</span>';
+                    }
+                ?>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-lg-4 control-label">Démon</label>
+            <div class="col-lg-8">
+                <?php 
+                    $daemonInfo = ai_connector_deamon_info();
+                    if ($daemonInfo['state'] === 'ok') {
+                        echo '<span class="label label-success"><i class="fas fa-check"></i> Actif</span>';
+                    } else {
+                        echo '<span class="label label-danger"><i class="fas fa-times"></i> Inactif</span>';
+                    }
+                ?>
+            </div>
+        </div>
+    </fieldset>
+</form>
+
+<form class="form-horizontal">
+    <fieldset>
         <legend><i class="fas fa-stethoscope"></i> Outils de diagnostic</legend>
         <div class="form-group">
             <label class="col-lg-4 control-label">Diagnostics</label>
