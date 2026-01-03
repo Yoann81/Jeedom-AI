@@ -126,7 +126,7 @@ $(document).ready(function() {
     // Chercher et remplir le bloc Dépendances
     $.ajax({
         type: 'POST',
-        url: 'core/ajax/ai_connector.ajax.php',
+        url: '/plugins/ai_connector/core/ajax/ai_connector.ajax.php',
         data: {
             action: 'dependancy_info'
         },
@@ -153,7 +153,7 @@ $(document).ready(function() {
     // Chercher et remplir le bloc Démon
     $.ajax({
         type: 'POST',
-        url: 'core/ajax/ai_connector.ajax.php',
+        url: '/plugins/ai_connector/core/ajax/ai_connector.ajax.php',
         data: {
             action: 'deamon_info'
         },
