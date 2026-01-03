@@ -5,7 +5,7 @@
 
 // Charger Jeedom
 $jeedom_loaded = false;
-$core_inc_path = dirname(__FILE__) . '/../../../core/php/core.inc.php';
+$core_inc_path = dirname(__FILE__) . '/../../../../core/php/core.inc.php';
 
 if (file_exists($core_inc_path)) {
     require_once $core_inc_path;
