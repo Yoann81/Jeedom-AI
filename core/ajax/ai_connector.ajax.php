@@ -83,6 +83,48 @@ try {
         ajax::success($result);
     }
 
+    // Récupère l'état des dépendances
+    if (init('action') == 'dependancy_info') {
+        try {
+            $plugin = plugin::byId('ai_connector');
+            if (!is_object($plugin)) {
+                ajax::success(['state' => 'nok', 'message' => 'Plugin non trouvé']);
+                return;
+            }
+            
+            // Vérifie l'état des dépendances
+            $dependancyInfo = $plugin->dependancy_info();
+            if (is_array($dependancyInfo) && isset($dependancyInfo['state'])) {
+                ajax::success($dependancyInfo);
+            } else {
+                ajax::success(['state' => 'ok', 'message' => 'Dépendances OK']);
+            }
+        } catch (Exception $e) {
+            ajax::success(['state' => 'nok', 'message' => $e->getMessage()]);
+        }
+    }
+
+    // Récupère l'état du démon
+    if (init('action') == 'deamon_info') {
+        try {
+            $plugin = plugin::byId('ai_connector');
+            if (!is_object($plugin)) {
+                ajax::success(['state' => 'nok', 'message' => 'Plugin non trouvé']);
+                return;
+            }
+            
+            // Vérifie l'état du démon
+            $daemonInfo = $plugin->deamon_info();
+            if (is_array($daemonInfo)) {
+                ajax::success($daemonInfo);
+            } else {
+                ajax::success(['state' => 'nok']);
+            }
+        } catch (Exception $e) {
+            ajax::success(['state' => 'nok', 'message' => $e->getMessage()]);
+        }
+    }
+
     throw new Exception(__('Aucune méthode correspondante à', __FILE__) . ' : ' . init('action'));
     /*     * *********Catch exeption*************** */
 }
