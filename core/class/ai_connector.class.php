@@ -81,6 +81,9 @@ class ai_connector extends eqLogic {
         $sttLanguage = $listeningEqLogic->getConfiguration('stt_language', 'fr-FR');
         $porcupineSensitivity = $listeningEqLogic->getConfiguration('porcupine_sensitivity', '0.95');
         
+        // DEBUG
+        log::add('ai_connector', 'debug', 'DEBUG Picovoice: porcupine_enable=' . $porcupineEnable . ', porcupine_sensitivity=' . $porcupineSensitivity . ', access_key=' . (empty($porcupineAccessKey) ? 'EMPTY' : 'SET'));
+        
         $path = realpath(dirname(__FILE__) . '/../../resources/demond/ai_connector_daemon.py');
         if (!file_exists($path)) {
             log::add('ai_connector', 'error', 'Script Python introuvable : ' . $path);
