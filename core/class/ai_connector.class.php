@@ -157,6 +157,11 @@ class ai_connector extends eqLogic {
     public static function getAllEquipments() {
         $equipments = [];
         foreach (eqLogic::all() as $eq) {
+            // Vérifier si getType() existe
+            if (!method_exists($eq, 'getType')) {
+                continue;
+            }
+            
             if ($eq->getType() === 'ai_connector') continue; // Exclure les équipements IA
             
             $equipments[] = [
@@ -186,6 +191,11 @@ class ai_connector extends eqLogic {
 
         $commands = [];
         foreach ($eqLogic->getCmd() as $cmd) {
+            // Vérifier si les méthodes existent
+            if (!method_exists($cmd, 'getType') || !method_exists($cmd, 'getLastValue')) {
+                continue;
+            }
+            
             // Récupérer la valeur actuelle selon le type de commande
             $cmdValue = '';
             if ($cmd->getType() === 'info') {
