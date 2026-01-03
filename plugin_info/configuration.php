@@ -11,10 +11,14 @@ function ai_connector_dependancy_info() {
     $return = array();
     
     $progressFile = dirname(__FILE__) . '/../tmp/ai_connector_dep_in_progress';
+    $daemonPath = dirname(__FILE__) . '/../resources/demond/ai_connector_daemon.py';
+    
+    // Debug logging
+    error_log('ai_connector_dependancy_info called. Daemon path: ' . $daemonPath . ' exists: ' . (file_exists($daemonPath) ? 'YES' : 'NO'));
+    
     if (file_exists($progressFile)) {
         $return['state'] = 'in_progress';
     } else {
-        $daemonPath = dirname(__FILE__) . '/../resources/demond/ai_connector_daemon.py';
         if (file_exists($daemonPath)) {
             $return['state'] = 'ok';
         } else {
@@ -32,6 +36,10 @@ function ai_connector_deamon_info() {
     $return['launchable'] = 'ok';
     
     $pidFile = '/tmp/jeedom/ai_connector/daemon.pid';
+    
+    // Debug logging
+    error_log('ai_connector_deamon_info called. PID file: ' . $pidFile . ' exists: ' . (file_exists($pidFile) ? 'YES' : 'NO'));
+    
     if (file_exists($pidFile)) {
         $pid = trim(file_get_contents($pidFile));
         if (!empty($pid) && is_numeric($pid)) {

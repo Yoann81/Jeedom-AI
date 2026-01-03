@@ -3,6 +3,19 @@
  * Plugin AI Multi-Connect pour Jeedom
  */
 
+// Définir les fonctions globales que Jeedom cherche
+if (!function_exists('ai_connector_dependancy_info')) {
+    function ai_connector_dependancy_info() {
+        return ai_connector::dependancy_info();
+    }
+}
+
+if (!function_exists('ai_connector_deamon_info')) {
+    function ai_connector_deamon_info() {
+        return ai_connector::deamon_info();
+    }
+}
+
 class ai_connector extends eqLogic {
 
     /**
