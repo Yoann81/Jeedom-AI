@@ -323,21 +323,24 @@ class ai_connector extends eqLogic {
     }
 
     public function processMessage($userMessage) {
+        log::add('ai_connector', 'debug', '>>> DÉBUT processMessage');
+        
         $engine = $this->getConfiguration('engine', 'gemini');
         $apiKey = $this->getConfiguration('apiKey');
         $model = $this->getConfiguration('model');
-        $systemPrompt = $this->getConfiguration('prompt', ''); // Get the system prompt from equipment configuration
-        $includeEquipments = $this->getConfiguration('include_equipments', 1); // Inclure équipements par défaut
+        $systemPrompt = $this->getConfiguration('prompt', '');
+        $includeEquipments = $this->getConfiguration('include_equipments', 1);
+
+        log::add('ai_connector', 'debug', 'Engine: ' . $engine . ', Model: ' . $model . ', Include equipments: ' . $includeEquipments);
 
         if (empty($apiKey)) {
-            $errorMsg = "La clé API n'est pas configurée pour l'équipement " . $this->getHumanName(true);
+            $errorMsg = "❌ La clé API n'est pas configurée pour l'équipement " . $this->getHumanName(true);
             log::add('ai_connector', 'error', $errorMsg);
             return $errorMsg;
         }
 
-        // If neither system prompt nor user message is provided, error out
         if (empty($systemPrompt) && empty($userMessage)) {
-            $errorMsg = "Aucun prompt système ni message utilisateur n'est fourni pour l'équipement " . $this->getHumanName(true);
+            $errorMsg = "❌ Aucun prompt système ni message utilisateur fourni";
             log::add('ai_connector', 'error', $errorMsg);
             return $errorMsg;
         }
@@ -345,15 +348,20 @@ class ai_connector extends eqLogic {
         // Ajouter le contexte des équipements au prompt si activé
         $finalSystemPrompt = $systemPrompt;
         if ($includeEquipments) {
+            log::add('ai_connector', 'debug', 'Ajout du contexte des équipements');
             $finalSystemPrompt .= $this->getJeedomContextForAI();
         }
 
+        log::add('ai_connector', 'debug', 'Appel du moteur IA: ' . $engine);
         // Traiter les commandes d'exécution potentielles
         $response = $this->callAIEngine($finalSystemPrompt, $userMessage, $apiKey, $model, $engine);
+        log::add('ai_connector', 'debug', 'Réponse brute du moteur IA: ' . substr($response, 0, 200));
         
         // Vérifier et exécuter les commandes au format [EXEC_COMMAND: id]
         $response = $this->processAICommands($response);
+        log::add('ai_connector', 'debug', 'Réponse après traitement des commandes: ' . substr($response, 0, 200));
         
+        log::add('ai_connector', 'debug', '<<< FIN processMessage');
         return $response;
     }
 
@@ -616,46 +624,63 @@ class ai_connectorCmd extends cmd {
         
         $prompt = $_options['message'] ?? '';
         
-        // Éviter les boucles : vérifier si le même prompt a été traité récemment
-        // Pour les appels manuels, être moins restrictif (30 secondes au lieu de 2 pour éviter les boucles)
-        $is_manual_call = !isset($_options['source']) || $_options['source'] !== 'stt_daemon';
-        $timeout_seconds = $is_manual_call ? 30 : 10; // 30s pour manuel, 10s pour STT
-        
-        $cache_key = 'ai_connector_last_prompt_' . $eqLogic->getId();
-        $last_prompt = cache::byKey($cache_key)->getValue('');
-        $last_time = cache::byKey($cache_key . '_time')->getValue(0);
-        $current_time = time();
-        
-        if ($prompt === $last_prompt && ($current_time - $last_time) < $timeout_seconds) {
-            log::add('ai_connector', 'warning', 'Prompt dupliqué ignoré pour éviter la boucle (' . $timeout_seconds . 's): ' . $prompt);
+        if (empty($prompt)) {
+            log::add('ai_connector', 'warning', 'Prompt vide reçu');
             return;
         }
         
-        // Mettre à jour le cache
-        cache::set($cache_key, $prompt, 300); // 5 minutes
-        cache::set($cache_key . '_time', $current_time, 300);
+        // Génère un hash unique du prompt + timestamp pour éviter les doublons
+        $prompt_hash = md5($prompt);
+        $cache_key = 'ai_connector_last_hash_' . $eqLogic->getId();
+        $last_hash = cache::byKey($cache_key)->getValue('');
+        $last_time = cache::byKey($cache_key . '_time')->getValue(0);
+        $current_time = time();
         
-        log::add('ai_connector', 'info', 'Exécution commande avec prompt: ' . $prompt);
+        // Si c'est le MÊME hash dans les 5 secondes, c'est probablement un doublon
+        if ($prompt_hash === $last_hash && ($current_time - $last_time) < 5) {
+            log::add('ai_connector', 'debug', 'Prompt dupliqué ignoré (même dans les 5s): ' . substr($prompt, 0, 50));
+            return;
+        }
+        
+        // Mettre à jour le cache avec le nouveau hash
+        cache::set($cache_key, $prompt_hash, 3600);
+        cache::set($cache_key . '_time', $current_time, 3600);
+        
+        log::add('ai_connector', 'info', 'Début traitement prompt: ' . substr($prompt, 0, 100));
 
-        // Appeler la nouvelle méthode publique sur l'équipement parent
-        $response = $eqLogic->processMessage($prompt);
-        log::add('ai_connector', 'info', 'Réponse IA: ' . $response);
-
-        // Mettre à jour la commande 'reponse' avec le résultat
-        $eqLogic->checkAndUpdateCmd('reponse', $response);
-        log::add('ai_connector', 'debug', 'Commande réponse mise à jour avec: ' . substr($response, 0, 50));
-
-        // Si TTS activé, parler la réponse
-        if ($eqLogic->getConfiguration('tts_enable', 0) == 1) {
-            $googleApiKey = $eqLogic->getConfiguration('google_api_key');
-            $ttsLanguage = $eqLogic->getConfiguration('tts_language', 'fr-FR');
-            $ttsVoice = $eqLogic->getConfiguration('tts_voice', 'fr-FR-Neural2-A');
-            $ttsAudioDevice = $eqLogic->getConfiguration('tts_audio_device', 'hw:0,0');
-            try {
-                $eqLogic->speakWithGoogleTTS($response, $googleApiKey, $ttsLanguage, $ttsVoice, $ttsAudioDevice);
-            } catch (Exception $e) {
-                log::add('ai_connector', 'error', 'TTS Exception: ' . $e->getMessage());
+        try {
+            // Appeler la méthode publique sur l'équipement parent
+            $response = $eqLogic->processMessage($prompt);
+            
+            if (empty($response)) {
+                log::add('ai_connector', 'warning', 'Réponse IA vide');
+                $response = 'Désolé, je n\'ai pas pu traiter votre demande.';
             }
+            
+            log::add('ai_connector', 'info', 'Réponse IA: ' . substr($response, 0, 200));
+
+            // Mettre à jour la commande 'reponse' avec le résultat
+            $eqLogic->checkAndUpdateCmd('reponse', $response);
+            log::add('ai_connector', 'debug', 'Commande réponse mise à jour');
+
+            // Si TTS activé, parler la réponse
+            if ($eqLogic->getConfiguration('tts_enable', 0) == 1) {
+                $googleApiKey = $eqLogic->getConfiguration('google_api_key');
+                $ttsLanguage = $eqLogic->getConfiguration('tts_language', 'fr-FR');
+                $ttsVoice = $eqLogic->getConfiguration('tts_voice', 'fr-FR-Neural2-A');
+                $ttsAudioDevice = $eqLogic->getConfiguration('tts_audio_device', 'hw:0,0');
+                
+                if (!empty($googleApiKey)) {
+                    log::add('ai_connector', 'debug', 'Démarrage TTS');
+                    $eqLogic->speakWithGoogleTTS($response, $googleApiKey, $ttsLanguage, $ttsVoice, $ttsAudioDevice);
+                } else {
+                    log::add('ai_connector', 'warning', 'TTS activé mais pas de clé Google API');
+                }
+            }
+        } catch (Exception $e) {
+            $errorMsg = 'Erreur pendant le traitement: ' . $e->getMessage();
+            log::add('ai_connector', 'error', $errorMsg);
+            $eqLogic->checkAndUpdateCmd('reponse', $errorMsg);
         }
     }
 }
