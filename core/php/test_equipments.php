@@ -251,36 +251,3 @@ $context = (count($aiEq) > 0) ? $aiEq[0]->getJeedomContextForAI() : '';
 
 </body>
 </html>
-} else {
-    echo "   ⚠️  Aucun équipement IA trouvé\n";
-}
-
-// Test 4: Vérifier que les commandes d'action existent
-echo "\n4. Commandes d'action disponibles:\n";
-$actionCommands = [];
-foreach ($equipments as $eq) {
-    if (!$eq['isEnable']) continue;
-    
-    $commands = ai_connector::getEquipmentCommands($eq['id']);
-    foreach ($commands as $cmd) {
-        if ($cmd['type'] === 'action' && $cmd['isVisible']) {
-            $actionCommands[] = [
-                'cmd_id' => $cmd['id'],
-                'name' => $cmd['name'],
-                'eq_name' => $eq['humanName'],
-                'subType' => $cmd['subType']
-            ];
-        }
-    }
-}
-
-echo "   Total: " . count($actionCommands) . " commande(s) d'action\n";
-if (count($actionCommands) > 0) {
-    echo "   Exemples:\n";
-    foreach (array_slice($actionCommands, 0, 5) as $cmd) {
-        echo "      - " . $cmd['eq_name'] . " → " . $cmd['name'] . " (ID: " . $cmd['cmd_id'] . ")\n";
-    }
-}
-
-echo "\n=== TEST TERMINÉ ===\n";
-?>
