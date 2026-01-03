@@ -134,9 +134,10 @@ $(document).ready(function() {
         success: function(data) {
             console.log('dependancy_info response:', data);
             var html = '';
-            if (data.state === 'ok') {
+            var state = data.result ? data.result.state : data.state;
+            if (state === 'ok') {
                 html = '<span class="label label-success"><i class="fas fa-check"></i> OK</span>';
-            } else if (data.state === 'in_progress') {
+            } else if (state === 'in_progress') {
                 html = '<span class="label label-info"><i class="fas fa-spinner fa-spin"></i> Installation en cours...</span>';
             } else {
                 html = '<span class="label label-danger"><i class="fas fa-times"></i> Non disponible</span>';
@@ -161,7 +162,8 @@ $(document).ready(function() {
         success: function(data) {
             console.log('deamon_info response:', data);
             var html = '';
-            if (data.state === 'ok') {
+            var state = data.result ? data.result.state : data.state;
+            if (state === 'ok') {
                 html = '<span class="label label-success"><i class="fas fa-check"></i> Actif</span>';
             } else {
                 html = '<span class="label label-danger"><i class="fas fa-times"></i> Inactif</span>';
