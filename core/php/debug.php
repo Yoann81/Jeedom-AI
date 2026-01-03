@@ -104,7 +104,25 @@ try {
             echo "✓ Méthode getAllEquipments trouvée\n";
 
             echo "\nTentative d'appel de getAllEquipments()...\n";
+            
+            // Supprimer temporairement les warnings pour cet appel
+            $oldErrorHandler = set_error_handler(function($errno, $errstr, $errfile, $errline) {
+                // Ignorer les warnings du cache Jeedom
+                if (strpos($errfile, 'cache.class.php') !== false && $errno === E_WARNING) {
+                    return true;
+                }
+                return false;
+            });
+            
             $equipments = ai_connector::getAllEquipments();
+            
+            // Restaurer le gestionnaire d'erreurs
+            if ($oldErrorHandler) {
+                set_error_handler($oldErrorHandler);
+            } else {
+                restore_error_handler();
+            }
+            
             echo "✓ Appel réussi\n";
             echo "  Résultat: " . count($equipments) . " équipement(s)\n";
 
@@ -159,7 +177,24 @@ try {
         echo "Test d'appel API IA...\n";
         echo "Engine: " . $aiEq->getConfiguration('engine', 'gemini') . "\n";
 
+        // Supprimer temporairement les warnings pour cet appel
+        $oldErrorHandler = set_error_handler(function($errno, $errstr, $errfile, $errline) {
+            // Ignorer les warnings du cache Jeedom
+            if (strpos($errfile, 'cache.class.php') !== false && $errno === E_WARNING) {
+                return true;
+            }
+            return false;
+        });
+        
         $response = $aiEq->processMessage("test");
+        
+        // Restaurer le gestionnaire d'erreurs
+        if ($oldErrorHandler) {
+            set_error_handler($oldErrorHandler);
+        } else {
+            restore_error_handler();
+        }
+        
         echo "✓ Réponse reçue (" . strlen($response) . " chars)\n";
         echo "Contenu: " . substr($response, 0, 200) . "\n";
     } else {
